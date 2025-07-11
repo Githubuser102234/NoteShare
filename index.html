@@ -43,16 +43,16 @@
         button:hover {
             background-color: #0056b3;
         }
-        #auth-status, #message {
+        #auth-status, #message, #public-view-status {
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
         }
-        #auth-status.success {
+        #auth-status.success, #public-view-status.success {
             background-color: #d4edda;
             color: #155724;
         }
-        #auth-status.error {
+        #auth-status.error, #public-view-status.error {
             background-color: #f8d7da;
             color: #721c24;
         }
@@ -88,6 +88,30 @@
         .hidden {
             display: none;
         }
+        #public-text-view {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        #public-text-view h2 {
+            margin-bottom: 15px;
+        }
+        #public-text-content {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+        }
+        #public-text-actions button {
+            margin-right: 10px;
+            margin-top: 15px;
+        }
     </style>
 </head>
 <body>
@@ -121,6 +145,17 @@
             <div id="shared-texts">
                 </div>
         </div>
+
+        <div id="public-text-view" class="hidden">
+            <h2>Viewing Shared Text</h2>
+            <h3 id="public-text-title"></h3>
+            <pre id="public-text-content"></pre>
+            <div id="public-text-actions">
+                <button id="public-download-button">Download</button>
+                <button id="public-raw-button">View Raw</button>
+            </div>
+            <div id="public-view-status"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -128,7 +163,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -162,7 +197,16 @@
         const messageDiv = document.getElementById('message');
         const sharedTextsDiv = document.getElementById('shared-texts');
 
+        // New elements for public view
+        const publicTextViewSection = document.getElementById('public-text-view');
+        const publicTextTitle = document.getElementById('public-text-title');
+        const publicTextContent = document.getElementById('public-text-content');
+        const publicDownloadButton = document.getElementById('public-download-button');
+        const publicRawButton = document.getElementById('public-raw-button');
+        const publicViewStatus = document.getElementById('public-view-status');
+
         let currentUser = null; // To store the current logged-in user
+        let currentViewedText = null; // To store text data for public view
 
         // --- Authentication Functions ---
 
@@ -207,6 +251,20 @@
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUser = user;
+                // If a public text is being viewed, don't hide it immediately on login
+                if (!publicTextViewSection.classList.contains('hidden')) {
+                    document.getElementById('auth-section').classList.add('hidden');
+                    createTextSection.classList.remove('hidden');
+                    sharedTextsSection.classList.remove('hidden');
+                    logoutButton.classList.remove('hidden');
+                    authStatusDiv.textContent = `Logged in as: ${user.email}`;
+                    authStatusDiv.className = 'success';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    loadSharedTexts(user.uid); // Load texts for the logged-in user
+                    return; // Don't hide the public view if it's active
+                }
+
                 document.getElementById('auth-section').classList.add('hidden');
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
@@ -216,9 +274,15 @@
                 emailInput.value = '';
                 passwordInput.value = '';
                 loadSharedTexts(user.uid); // Load texts for the logged-in user
+                publicTextViewSection.classList.add('hidden'); // Hide public view
             } else {
                 currentUser = null;
-                document.getElementById('auth-section').classList.remove('hidden');
+                // Only show auth section if not viewing a public text
+                if (!publicTextViewSection.classList.contains('hidden')) {
+                     document.getElementById('auth-section').classList.add('hidden'); // Keep hidden if public text is showing
+                } else {
+                    document.getElementById('auth-section').classList.remove('hidden');
+                }
                 createTextSection.classList.add('hidden');
                 sharedTextsSection.classList.add('hidden');
                 logoutButton.classList.add('hidden');
@@ -284,7 +348,7 @@
                     textItem.id = `text-${textId}`; // Add an ID for direct linking
 
                     textItem.innerHTML = `
-                        <h3><a href="#text-${textId}">${textData.title}</a></h3>
+                        <h3><a href="#text-${textId}" onclick="showPublicText('${textId}'); return false;">${textData.title}</a></h3>
                         <pre>${textData.content}</pre>
                         <div class="actions">
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
@@ -299,7 +363,58 @@
             }
         }
 
-        // --- Utility Functions ---
+        // --- Public Text View Functions ---
+
+        window.showPublicText = async (textId) => {
+            // Hide all main sections
+            document.getElementById('auth-section').classList.add('hidden');
+            createTextSection.classList.add('hidden');
+            sharedTextsSection.classList.add('hidden');
+            logoutButton.classList.add('hidden'); // Also hide logout if not authenticated
+
+            publicTextViewSection.classList.remove('hidden'); // Show public view section
+            publicTextTitle.textContent = 'Loading...';
+            publicTextContent.textContent = 'Loading text content...';
+            publicViewStatus.textContent = ''; // Clear previous status
+            currentViewedText = null; // Clear previous text data
+
+            try {
+                const docRef = doc(db, "texts", textId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const textData = docSnap.data();
+                    publicTextTitle.textContent = textData.title;
+                    publicTextContent.textContent = textData.content;
+                    currentViewedText = { title: textData.title, content: textData.content }; // Store for buttons
+                    publicViewStatus.className = 'success';
+                    publicViewStatus.textContent = 'Text loaded successfully.';
+
+                    // Attach event listeners for public download/raw buttons
+                    publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
+                    publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
+
+                } else {
+                    publicTextTitle.textContent = 'Text Not Found';
+                    publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
+                    publicViewStatus.className = 'error';
+                    publicViewStatus.textContent = 'Text not found.';
+                    // Disable buttons if text not found
+                    publicDownloadButton.onclick = null;
+                    publicRawButton.onclick = null;
+                }
+            } catch (error) {
+                publicTextTitle.textContent = 'Error';
+                publicTextContent.textContent = 'Could not load text due to an error.';
+                publicViewStatus.className = 'error';
+                publicViewStatus.textContent = `Error loading text: ${error.message}`;
+                // Disable buttons
+                publicDownloadButton.onclick = null;
+                publicRawButton.onclick = null;
+            }
+        };
+
+        // --- Utility Functions (already existing, slightly modified for public view) ---
 
         window.downloadText = (title, content) => {
             const element = document.createElement('a');
@@ -318,6 +433,11 @@
         };
 
         window.deleteText = async (textId) => {
+            if (!currentUser) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'You must be logged in to delete texts.';
+                return;
+            }
             if (!confirm('Are you sure you want to delete this text?')) {
                 return;
             }
@@ -332,6 +452,19 @@
             }
         };
 
+        // --- Initial Load Logic (Check for #hash in URL) ---
+        // This runs when the page first loads
+        window.addEventListener('load', () => {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6); // Remove '#text-' prefix
+                showPublicText(textId);
+            } else {
+                // If no specific text is requested, show login/signup or current user content
+                // onAuthStateChanged will handle the initial display for logged-in users.
+                // If not logged in and no hash, auth-section will be shown by default.
+            }
+        });
     </script>
 </body>
 </html>
