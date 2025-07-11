@@ -38,7 +38,7 @@ NoteShare is a simple and clean web app that lets users **create**, **share**, a
 
 ## 📬 Feedback or Issues?
 
-Have suggestions or found a bug? Open an [issue](https://github.com/githubuser102234/NoteShare/feedback) or let us know!
+Have suggestions or found a bug? Open an [issue](https://githubuser102234.github.io/NoteShare/feedback) or let us know!
 
 ---
 
