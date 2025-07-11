@@ -162,6 +162,7 @@
                 <span id="public-copy-status" class="copy-status"></span>
             </div>
             <div id="public-view-status"></div>
+            <button id="go-back-button" class="hidden">Go Back to My Texts</button>
         </div>
     </div>
 
@@ -210,9 +211,10 @@
         const publicTextContent = document.getElementById('public-text-content');
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
-        const publicCopyLinkButton = document.getElementById('public-copy-link-button'); // New
-        const publicCopyStatus = document.getElementById('public-copy-status');     // New
+        const publicCopyLinkButton = document.getElementById('public-copy-link-button');
+        const publicCopyStatus = document.getElementById('public-copy-status');
         const publicViewStatus = document.getElementById('public-view-status');
+        const goBackButton = document.getElementById('go-back-button'); // New
 
         let currentUser = null; // To store the current logged-in user
         let currentViewedText = null; // To store text data for public view
@@ -248,6 +250,9 @@
         logoutButton.addEventListener('click', async () => {
             try {
                 await signOut(auth);
+                // When logged out, clear the hash and show the default (auth) view
+                window.location.hash = ''; // Remove hash
+                displayMainUI(); // Go back to default UI state
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = 'Successfully logged out.';
             } catch (error) {
@@ -256,48 +261,47 @@
             }
         });
 
-        // Listen for authentication state changes
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                // If a public text is being viewed, don't hide it immediately on login
-                if (!publicTextViewSection.classList.contains('hidden')) {
-                    document.getElementById('auth-section').classList.add('hidden');
-                    createTextSection.classList.remove('hidden');
-                    sharedTextsSection.classList.remove('hidden');
-                    logoutButton.classList.remove('hidden');
-                    authStatusDiv.textContent = `Logged in as: ${user.email}`;
-                    authStatusDiv.className = 'success';
-                    emailInput.value = '';
-                    passwordInput.value = '';
-                    loadSharedTexts(user.uid); // Load texts for the logged-in user
-                    return; // Don't hide the public view if it's active
-                }
+        // Function to control UI visibility
+        function displayMainUI(showPublicView = false) {
+            // Hide all sections first
+            document.getElementById('auth-section').classList.add('hidden');
+            createTextSection.classList.add('hidden');
+            sharedTextsSection.classList.add('hidden');
+            publicTextViewSection.classList.add('hidden');
+            logoutButton.classList.add('hidden');
+            goBackButton.classList.add('hidden');
 
-                document.getElementById('auth-section').classList.add('hidden');
+            if (showPublicView) {
+                publicTextViewSection.classList.remove('hidden');
+                // The public view doesn't need to show auth options
+                // unless the user specifically navigates away from the text view.
+            } else if (currentUser) {
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
                 logoutButton.classList.remove('hidden');
-                authStatusDiv.textContent = `Logged in as: ${user.email}`;
-                authStatusDiv.className = 'success';
-                emailInput.value = '';
-                passwordInput.value = '';
-                loadSharedTexts(user.uid); // Load texts for the logged-in user
-                publicTextViewSection.classList.add('hidden'); // Hide public view
             } else {
-                currentUser = null;
-                // Only show auth section if not viewing a public text
-                if (!publicTextViewSection.classList.contains('hidden')) {
-                     document.getElementById('auth-section').classList.add('hidden'); // Keep hidden if public text is showing
+                document.getElementById('auth-section').classList.remove('hidden');
+            }
+            authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
+            authStatusDiv.className = currentUser ? 'success' : '';
+        }
+
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            // When auth state changes, re-evaluate UI based on hash (if any) or login status
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6);
+                showPublicText(textId); // Display public text if hash is present
+            } else {
+                displayMainUI(false); // Otherwise, show logged-in or auth sections
+                if (currentUser) {
+                    loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
                 } else {
-                    document.getElementById('auth-section').classList.remove('hidden');
+                    sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
                 }
-                createTextSection.classList.add('hidden');
-                sharedTextsSection.classList.add('hidden');
-                logoutButton.classList.add('hidden');
-                authStatusDiv.textContent = 'Please sign up or log in.';
-                authStatusDiv.className = '';
-                sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
             }
         });
 
@@ -357,7 +361,7 @@
                     textItem.id = `text-${textId}`; // Add an ID for direct linking
 
                     textItem.innerHTML = `
-                        <h3><a href="#text-${textId}" onclick="showPublicText('${textId}'); return false;">${textData.title}</a></h3>
+                        <h3><a href="#text-${textId}">${textData.title}</a></h3>
                         <pre>${textData.content}</pre>
                         <div class="actions">
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
@@ -377,13 +381,8 @@
         // --- Public Text View Functions ---
 
         window.showPublicText = async (textId) => {
-            // Hide all main sections
-            document.getElementById('auth-section').classList.add('hidden');
-            createTextSection.classList.add('hidden');
-            sharedTextsSection.classList.add('hidden');
-            logoutButton.classList.add('hidden'); // Also hide logout if not authenticated
-
-            publicTextViewSection.classList.remove('hidden'); // Show public view section
+            displayMainUI(true); // Show public view, hide others
+            goBackButton.classList.remove('hidden'); // Show go back button
             publicTextTitle.textContent = 'Loading...';
             publicTextContent.textContent = 'Loading text content...';
             publicViewStatus.textContent = ''; // Clear previous status
@@ -491,19 +490,40 @@
             }
         };
 
-        // --- Initial Load Logic (Check for #hash in URL) ---
-        // This runs when the page first loads
+        // --- Initial Load Logic and Hash Change Listener ---
+
+        // Handle hash changes (when user clicks a #link or changes URL hash manually)
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6); // Remove '#text-' prefix
+                showPublicText(textId);
+            } else {
+                // If hash is cleared or not a text hash, display the appropriate UI
+                displayMainUI(false);
+                if (currentUser) {
+                    loadSharedTexts(currentUser.uid);
+                }
+            }
+        });
+
+        // Handle initial page load
         window.addEventListener('load', () => {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#text-')) {
                 const textId = hash.substring(6); // Remove '#text-' prefix
                 showPublicText(textId);
             } else {
-                // If no specific text is requested, show login/signup or current user content
-                // onAuthStateChanged will handle the initial display for logged-in users.
-                // If not logged in and no hash, auth-section will be shown by default.
+                // Initial display when no hash is present
+                // onAuthStateChanged will handle this for initial load too.
             }
         });
+
+        // Add 'Go Back' button functionality
+        goBackButton.addEventListener('click', () => {
+            window.location.hash = ''; // Clear the hash, triggering the hashchange listener
+        });
+
     </script>
 </body>
 </html>
