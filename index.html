@@ -117,6 +117,13 @@
             margin-right: 10px;
             margin-top: 15px;
         }
+        /* New style for timestamp */
+        .text-timestamp {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+            display: block; /* Ensures it takes full width */
+        }
     </style>
 </head>
 <body>
@@ -154,7 +161,7 @@
         <div id="public-text-view" class="hidden">
             <h2>Viewing Shared Text</h2>
             <h3 id="public-text-title"></h3>
-            <pre id="public-text-content"></pre>
+            <span id="public-text-timestamp" class="text-timestamp"></span> <pre id="public-text-content"></pre>
             <div id="public-text-actions">
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
@@ -170,8 +177,9 @@
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        // Import Timestamp from Firestore to store dates correctly
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -208,6 +216,7 @@
         // New elements for public view
         const publicTextViewSection = document.getElementById('public-text-view');
         const publicTextTitle = document.getElementById('public-text-title');
+        const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
         const publicTextContent = document.getElementById('public-text-content');
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
@@ -324,11 +333,12 @@
             }
 
             try {
+                // Store timestamp as a Firebase Timestamp
                 await addDoc(collection(db, "texts"), {
                     userId: currentUser.uid,
                     title: title,
                     content: content,
-                    timestamp: new Date()
+                    timestamp: Timestamp.now() // Use Timestamp.now()
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = 'Text shared successfully!';
@@ -356,12 +366,17 @@
                 querySnapshot.forEach((doc) => {
                     const textData = doc.data();
                     const textId = doc.id;
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
                     const textItem = document.createElement('div');
                     textItem.className = 'text-item';
                     textItem.id = `text-${textId}`; // Add an ID for direct linking
 
                     textItem.innerHTML = `
                         <h3><a href="#text-${textId}">${textData.title}</a></h3>
+                        <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
                         <pre>${textData.content}</pre>
                         <div class="actions">
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
@@ -384,6 +399,7 @@
             displayMainUI(true); // Show public view, hide others
             goBackButton.classList.remove('hidden'); // Show go back button
             publicTextTitle.textContent = 'Loading...';
+            publicTextTimestamp.textContent = ''; // Clear timestamp
             publicTextContent.textContent = 'Loading text content...';
             publicViewStatus.textContent = ''; // Clear previous status
             publicCopyStatus.textContent = ''; // Clear previous copy status
@@ -395,7 +411,12 @@
 
                 if (docSnap.exists()) {
                     const textData = docSnap.data();
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
                     publicTextTitle.textContent = textData.title;
+                    publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`; // Set timestamp
                     publicTextContent.textContent = textData.content;
                     currentViewedText = { title: textData.title, content: textData.content, id: textId }; // Store for buttons and link
                     publicViewStatus.className = 'success';
@@ -408,6 +429,7 @@
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
+                    publicTextTimestamp.textContent = ''; // Clear timestamp
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicViewStatus.className = 'error';
                     publicViewStatus.textContent = 'Text not found.';
@@ -418,6 +440,7 @@
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
+                publicTextTimestamp.textContent = ''; // Clear timestamp
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicViewStatus.className = 'error';
                 publicViewStatus.textContent = `Error loading text: ${error.message}`;
@@ -490,6 +513,38 @@
                 messageDiv.textContent = `Error deleting text: ${error.message}`;
             }
         };
+
+        /**
+         * Formats a given Date object into a human-readable "time ago" string.
+         * @param {Date} date - The date to format.
+         * @returns {string} - The formatted string (e.g., "5 minutes ago", "2 days ago").
+         */
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) {
+                return Math.floor(interval) + " years ago";
+            }
+            interval = seconds / 2592000;
+            if (interval > 1) {
+                return Math.floor(interval) + " months ago";
+            }
+            interval = seconds / 86400;
+            if (interval > 1) {
+                return Math.floor(interval) + " days ago";
+            }
+            interval = seconds / 3600;
+            if (interval > 1) {
+                return Math.floor(interval) + " hours ago";
+            }
+            interval = seconds / 60;
+            if (interval > 1) {
+                return Math.floor(interval) + " minutes ago";
+            }
+            return Math.floor(seconds) + " seconds ago";
+        }
+
 
         // --- Initial Load Logic and Hash Change Listener ---
 
