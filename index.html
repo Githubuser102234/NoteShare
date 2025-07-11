@@ -447,7 +447,8 @@
         };
 
         window.copyShareLink = async (textId, buttonElement) => {
-            const shareLink = `${window.location.origin}/#text-${textId}`;
+            // Corrected shareLink to include the GitHub Pages repository name
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
             let statusElement;
 
             if (buttonElement.id === 'public-copy-link-button') {
