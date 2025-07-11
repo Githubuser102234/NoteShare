@@ -48,13 +48,18 @@
             padding: 10px;
             border-radius: 4px;
         }
-        #auth-status.success, #public-view-status.success {
+        #auth-status.success, #public-view-status.success, .copy-status.success {
             background-color: #d4edda;
             color: #155724;
         }
-        #auth-status.error, #public-view-status.error {
+        #auth-status.error, #public-view-status.error, .copy-status.error {
             background-color: #f8d7da;
             color: #721c24;
+        }
+        .copy-status {
+            margin-left: 10px;
+            display: inline-block;
+            font-size: 0.9em;
         }
         #shared-texts {
             margin-top: 20px;
@@ -153,6 +158,8 @@
             <div id="public-text-actions">
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
+                <button id="public-copy-link-button">Copy Link</button>
+                <span id="public-copy-status" class="copy-status"></span>
             </div>
             <div id="public-view-status"></div>
         </div>
@@ -203,6 +210,8 @@
         const publicTextContent = document.getElementById('public-text-content');
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
+        const publicCopyLinkButton = document.getElementById('public-copy-link-button'); // New
+        const publicCopyStatus = document.getElementById('public-copy-status');     // New
         const publicViewStatus = document.getElementById('public-view-status');
 
         let currentUser = null; // To store the current logged-in user
@@ -353,6 +362,8 @@
                         <div class="actions">
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
                             <button onclick="viewRawText('${encodeURIComponent(textData.content)}')">View Raw</button>
+                            <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
+                            <span class="copy-status" id="copy-status-${textId}"></span>
                             <button onclick="deleteText('${textId}')">Delete</button>
                         </div>
                     `;
@@ -376,6 +387,7 @@
             publicTextTitle.textContent = 'Loading...';
             publicTextContent.textContent = 'Loading text content...';
             publicViewStatus.textContent = ''; // Clear previous status
+            publicCopyStatus.textContent = ''; // Clear previous copy status
             currentViewedText = null; // Clear previous text data
 
             try {
@@ -386,13 +398,14 @@
                     const textData = docSnap.data();
                     publicTextTitle.textContent = textData.title;
                     publicTextContent.textContent = textData.content;
-                    currentViewedText = { title: textData.title, content: textData.content }; // Store for buttons
+                    currentViewedText = { title: textData.title, content: textData.content, id: textId }; // Store for buttons and link
                     publicViewStatus.className = 'success';
                     publicViewStatus.textContent = 'Text loaded successfully.';
 
-                    // Attach event listeners for public download/raw buttons
+                    // Attach event listeners for public download/raw/copy buttons
                     publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
                     publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
+                    publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
@@ -402,6 +415,7 @@
                     // Disable buttons if text not found
                     publicDownloadButton.onclick = null;
                     publicRawButton.onclick = null;
+                    publicCopyLinkButton.onclick = null; // Disable copy button too
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
@@ -411,10 +425,11 @@
                 // Disable buttons
                 publicDownloadButton.onclick = null;
                 publicRawButton.onclick = null;
+                publicCopyLinkButton.onclick = null; // Disable copy button too
             }
         };
 
-        // --- Utility Functions (already existing, slightly modified for public view) ---
+        // --- Utility Functions ---
 
         window.downloadText = (title, content) => {
             const element = document.createElement('a');
@@ -431,6 +446,30 @@
             rawTextWindow.document.write(`<pre>${decodeURIComponent(content)}</pre>`);
             rawTextWindow.document.close();
         };
+
+        window.copyShareLink = async (textId, buttonElement) => {
+            const shareLink = `${window.location.origin}/#text-${textId}`;
+            let statusElement;
+
+            if (buttonElement.id === 'public-copy-link-button') {
+                statusElement = publicCopyStatus;
+            } else {
+                statusElement = document.getElementById(`copy-status-${textId}`);
+            }
+
+            try {
+                await navigator.clipboard.writeText(shareLink);
+                statusElement.className = 'copy-status success';
+                statusElement.textContent = 'Copied!';
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000); // Clear after 2 seconds
+            } catch (err) {
+                statusElement.className = 'copy-status error';
+                statusElement.textContent = 'Failed to copy!';
+                console.error('Failed to copy: ', err);
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
+            }
+        };
+
 
         window.deleteText = async (textId) => {
             if (!currentUser) {
