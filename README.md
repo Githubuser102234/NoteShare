@@ -45,3 +45,9 @@ Have suggestions or found a bug? Open an [issue](https://githubuser102234.github
 ## 📄 License
 
 N/A
+
+---
+
+## 🔨 Community Guidelines
+
+Community Guidelines may be viewed [here](https://githubuser102234.github.io/NoteShare/Communityguidelines)
