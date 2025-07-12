@@ -10,10 +10,14 @@
             margin: 20px;
             background-color: #f4f4f4;
             color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh; /* Make body take up most of viewport height */
         }
         .container {
             max-width: 900px;
-            margin: 0 auto;
+            width: 100%;
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -22,31 +26,6 @@
         h1 {
             color: #d9534f; /* Red for administrative interface */
             text-align: center;
-        }
-        #password-section {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        #password-section input {
-            padding: 10px;
-            margin-right: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        #password-section button {
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        #password-section button:hover {
-            background-color: #0056b3;
-        }
-        #viewer-content {
-            display: none; /* Hidden until password is correct */
         }
         .report-item {
             background-color: #f9f9f9;
@@ -113,29 +92,25 @@
             text-align: center;
             color: #666;
         }
+        /* Style for the blank page content */
+        #blank-page-content {
+            text-align: center;
+            padding: 50px;
+            color: #555;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>TextShare Report Viewer (Admin)</h1>
-
-        <div id="password-section">
-            <input type="password" id="admin-password" placeholder="Enter Admin Password">
-            <button id="login-admin-button">Log In</button>
-            <div id="password-status" class="status-message"></div>
-        </div>
-
-        <div id="viewer-content">
-            <h2>Recent Reports</h2>
-            <div id="reports-list">
-                <p>No reports to display.</p>
-            </div>
-            <div id="action-status" class="status-message"></div>
+    <div class="container" id="main-container">
+        <div id="loading-message">
+            <p>Checking authorization...</p>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -149,37 +124,87 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        const ADMIN_PASSWORD = "24681012ear"; // !!! WARNING: DO NOT USE IN PRODUCTION !!!
+        // IMPORTANT: Replace this with the ACTUAL UID(s) of your admin user(s) from Firebase Authentication
+        const ADMIN_UIDS = ['YOUR_ADMIN_UID_HERE']; // e.g., ['abcdef1234567890', 'anotherAdminUid']
 
-        const adminPasswordInput = document.getElementById('admin-password');
-        const loginAdminButton = document.getElementById('login-admin-button');
-        const passwordStatusDiv = document.getElementById('password-status');
-        const viewerContentDiv = document.getElementById('viewer-content');
-        const reportsListDiv = document.getElementById('reports-list');
-        const actionStatusDiv = document.getElementById('action-status');
+        const mainContainer = document.getElementById('main-container');
 
-        loginAdminButton.addEventListener('click', () => {
-            if (adminPasswordInput.value === ADMIN_PASSWORD) {
-                passwordStatusDiv.className = 'status-message success';
-                passwordStatusDiv.textContent = 'Access Granted!';
-                passwordStatusDiv.style.display = 'block';
-                viewerContentDiv.style.display = 'block'; // Show the viewer content
-                document.getElementById('password-section').style.display = 'none'; // Hide password input
-                loadReports();
+        // Function to display the actual report viewer content
+        function showReportViewerUI() {
+            mainContainer.innerHTML = `
+                <h1>TextShare Report Viewer (Admin)</h1>
+                <p style="text-align: center; font-style: italic;">Logged in as: ${auth.currentUser.email}</p>
+                <h2>Recent Reports</h2>
+                <div id="reports-list">
+                    <p>Loading reports...</p>
+                </div>
+                <div id="action-status" class="status-message"></div>
+                <button onclick="logoutAdmin()">Log Out</button>
+            `;
+            // Re-get element references after innerHTML is updated
+            const reportsListDiv = document.getElementById('reports-list');
+            const actionStatusDiv = document.getElementById('action-status');
+            loadReports(reportsListDiv, actionStatusDiv); // Pass elements to the function
+        }
+
+        // Function to display the blank page message
+        function showBlankPage() {
+            mainContainer.innerHTML = `
+                <div id="blank-page-content">
+                    <p>Access Denied.</p>
+                    <p>You do not have permission to view this page.</p>
+                    <p>Please log in with an authorized administrator account.</p>
+                    <button onclick="promptForAdminLogin()">Admin Login</button>
+                </div>
+            `;
+        }
+
+        // Function to prompt for admin login if needed (basic example)
+        window.promptForAdminLogin = async () => {
+            const email = prompt("Enter admin email:");
+            const password = prompt("Enter admin password:");
+
+            if (email && password) {
+                try {
+                    await signInWithEmailAndPassword(auth, email, password);
+                    // onAuthStateChanged will handle the UI update if successful
+                } catch (error) {
+                    alert(`Login failed: ${error.message}`);
+                }
+            }
+        };
+
+        // Firebase Auth State Listener
+        onAuthStateChanged(auth, (user) => {
+            if (user && ADMIN_UIDS.includes(user.uid)) {
+                // User is logged in AND is an admin
+                showReportViewerUI();
             } else {
-                passwordStatusDiv.className = 'status-message error';
-                passwordStatusDiv.textContent = 'Incorrect Password.';
-                passwordStatusDiv.style.display = 'block';
+                // User is not logged in OR is not an admin
+                showBlankPage();
             }
         });
 
-        async function loadReports() {
+        // Admin logout function
+        window.logoutAdmin = async () => {
+            try {
+                await auth.signOut();
+                // onAuthStateChanged will handle the UI update
+            } catch (error) {
+                alert(`Error logging out: ${error.message}`);
+                console.error("Logout error:", error);
+            }
+        };
+
+        async function loadReports(reportsListDiv, actionStatusDiv) {
             reportsListDiv.innerHTML = '<p>Loading reports...</p>';
             actionStatusDiv.textContent = ''; // Clear previous status
 
             try {
+                // Firestore rules will now enforce that only admins can read this collection
                 const querySnapshot = await getDocs(collection(db, "reports"));
                 reportsListDiv.innerHTML = ''; // Clear loading message
 
@@ -192,11 +217,11 @@
                     const reportData = doc.data();
                     const reportId = doc.id;
                     const timestamp = reportData.timestamp ? reportData.timestamp.toDate() : new Date();
-                    const formattedDate = timestamp.toLocaleString(); // Use local string for readability
+                    const formattedDate = timestamp.toLocaleString();
 
                     const reportItem = document.createElement('div');
                     reportItem.className = 'report-item';
-                    reportItem.setAttribute('data-report-id', reportId); // Store report ID for deletion
+                    reportItem.setAttribute('data-report-id', reportId);
 
                     reportItem.innerHTML = `
                         <div class="meta-info">Report ID: <strong>${reportId}</strong> | Reported at: <strong>${formattedDate}</strong></div>
@@ -205,36 +230,37 @@
                         <p><strong>Reporter UID:</strong> ${reportData.reporterUid || 'Anonymous'}</p>
                         <div class="action-buttons">
                             <a href="${reportData.reportedLink}" target="_blank">View Reported Content</a>
-                            <button onclick="removeReportedContent('${reportId}', '${reportData.reportedLink}')">Remove Reported Content</button>
+                            <button onclick="removeReportedContent('${reportId}', '${encodeURIComponent(reportData.reportedLink)}', document.getElementById('reports-list'), document.getElementById('action-status'))">Remove Reported Content</button>
                         </div>
                     `;
                     reportsListDiv.appendChild(reportItem);
                 });
             } catch (error) {
+                // If the user isn't allowed by Firestore rules, this catch block will trigger
                 reportsListDiv.innerHTML = `<p class="status-message error">Error loading reports: ${error.message}</p>`;
-                console.error("Error loading reports:", error);
+                console.error("Error loading reports (likely permission denied):", error);
+                actionStatusDiv.className = 'status-message error';
+                actionStatusDiv.textContent = 'Failed to load reports. Check your Firebase security rules and admin login.';
             }
         }
 
         // Function to extract textId from a given link
-        function extractTextIdFromLink(link) {
+        function extractTextIdFromLink(encodedLink) {
             try {
+                const link = decodeURIComponent(encodedLink);
                 const url = new URL(link);
-                // Assuming the format is like: https://githubuser102234.github.io/NoteShare/#text-SOMEID
                 const hash = url.hash;
                 if (hash.startsWith('#text-')) {
                     return hash.substring(6);
                 }
             } catch (e) {
-                console.error("Invalid URL format:", link, e);
+                console.error("Invalid URL format:", encodedLink, e);
             }
             return null;
         }
 
         // This function will attempt to delete the report and the associated text content.
-        // !!! IMPORTANT: THIS CLIENT-SIDE DELETION IS NOT SECURE FOR PRODUCTION !!!
-        // A Cloud Function should handle the deletion of original content.
-        window.removeReportedContent = async (reportId, reportedLink) => {
+        window.removeReportedContent = async (reportId, encodedReportedLink, reportsListDiv, actionStatusDiv) => {
             if (!confirm('Are you absolutely sure you want to REMOVE this report AND attempt to DELETE the reported text content? This action cannot be undone.')) {
                 return;
             }
@@ -244,12 +270,14 @@
 
             try {
                 // 1. Delete the report itself from the 'reports' collection
+                // Firestore rules will allow this if logged in as admin
                 await deleteDoc(doc(db, "reports", reportId));
                 console.log("Report deleted from 'reports' collection:", reportId);
 
                 // 2. Attempt to delete the original shared text content
-                const textId = extractTextIdFromLink(reportedLink);
+                const textId = extractTextIdFromLink(encodedReportedLink);
                 if (textId) {
+                    // Firestore rules will allow this if logged in as admin OR original creator
                     await deleteDoc(doc(db, "texts", textId));
                     console.log("Original text deleted from 'texts' collection:", textId);
                     actionStatusDiv.className = 'status-message success';
@@ -272,19 +300,17 @@
             } catch (error) {
                 actionStatusDiv.className = 'status-message error';
                 actionStatusDiv.textContent = `Error removing content: ${error.message}. Check console for details.`;
-                console.error("Error removing report or text:", error);
-                // Even if deleting original text fails, the report should still be removed from the list.
+                console.error("Error removing report or text (likely permission denied):", error);
+                // Even if deleting original text fails, the report should still be removed from the list
+                // if the report deletion itself was successful according to rules.
                 const reportItemElement = document.querySelector(`.report-item[data-report-id="${reportId}"]`);
                 if (reportItemElement) {
                     reportItemElement.remove(); // Still remove report from UI if the report itself was deleted
                 }
             }
             // Reload reports to reflect changes, especially if something went wrong but the report was removed
-            loadReports();
+            loadReports(reportsListDiv, actionStatusDiv);
         };
-
-        // Initially check if password is already provided (e.g., in a session, not implemented here)
-        // For this simple example, we just wait for the button click.
     </script>
 </body>
 </html>
