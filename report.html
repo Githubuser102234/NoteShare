@@ -1,1 +1,170 @@
-blank
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report a Text</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        input[type="url"],
+        textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .status-message {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .back-button {
+            background-color: #6c757d;
+            margin-top: 15px;
+        }
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Report a Shared Text</h1>
+
+        <form id="report-form">
+            <label for="text-link">Link to the Text (required):</label>
+            <input type="url" id="text-link" name="text-link" placeholder="e.g., https://githubuser102234.github.io/NoteShare/#text-someid" required>
+
+            <label for="more-info">Additional Information (optional):</label>
+            <textarea id="more-info" name="more-info" placeholder="Please provide any details that might help us understand the issue."></textarea>
+
+            <button type="submit">Submit Report</button>
+        </form>
+
+        <div id="report-status" class="status-message"></div>
+        <button class="back-button" onclick="window.history.back()">Go Back</button>
+    </div>
+
+    <script type="module">
+        // Firebase configuration (same as your main app for analytics, if desired)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        import { getFirestore, collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebasestorage.app",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getFirestore(app);
+
+        const reportForm = document.getElementById('report-form');
+        const textLinkInput = document.getElementById('text-link');
+        const moreInfoTextarea = document.getElementById('more-info');
+        const reportStatusDiv = document.getElementById('report-status');
+
+        // Function to get query parameters from the URL
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // Pre-fill the link if provided in the URL
+        window.addEventListener('load', () => {
+            const linkFromUrl = getQueryParam('link');
+            if (linkFromUrl) {
+                textLinkInput.value = decodeURIComponent(linkFromUrl);
+            }
+        });
+
+        reportForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const textLink = textLinkInput.value.trim();
+            const moreInfo = moreInfoTextarea.value.trim();
+
+            if (!textLink) {
+                reportStatusDiv.className = 'status-message error';
+                reportStatusDiv.textContent = 'Please provide the link to the text you are reporting.';
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "reports"), {
+                    reportedLink: textLink,
+                    additionalInfo: moreInfo,
+                    timestamp: Timestamp.now(),
+                    // You could add userId here if the user is logged in, but the prompt says
+                    // any user whether logged in or not may report.
+                    // userId: auth.currentUser ? auth.currentUser.uid : null,
+                });
+                reportStatusDiv.className = 'status-message success';
+                reportStatusDiv.textContent = 'Report submitted successfully! Thank you for your feedback.';
+                reportForm.reset(); // Clear the form
+            } catch (error) {
+                reportStatusDiv.className = 'status-message error';
+                reportStatusDiv.textContent = `Error submitting report: ${error.message}`;
+                console.error("Error submitting report:", error);
+            }
+        });
+    </script>
+</body>
+</html>
