@@ -466,7 +466,12 @@
                     publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
                     publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
                     publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
-                    reportButton.onclick = () => window.location.href = 'https://githubuser102234.github.io/NoteShare/report'; // NEW REPORT BUTTON CLICK HANDLER
+                    // NEW REPORT BUTTON CLICK HANDLER: Pass the current note's link
+                    reportButton.onclick = () => {
+                        const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+                        const reportUrl = `https://githubuser102234.github.io/NoteShare/report?link=${encodeURIComponent(currentNoteLink)}`;
+                        window.location.href = reportUrl;
+                    };
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
