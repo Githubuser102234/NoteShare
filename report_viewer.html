@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #d9534f; /* Red for administrative interface */
+            text-align: center;
+        }
+        #password-section {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        #password-section input {
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #password-section button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        #password-section button:hover {
+            background-color: #0056b3;
+        }
+        #viewer-content {
+            display: none; /* Hidden until password is correct */
+        }
+        .report-item {
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .report-item strong {
+            color: #333;
+        }
+        .report-item .meta-info {
+            font-size: 0.9em;
+            color: #777;
+        }
+        .report-item .action-buttons {
+            margin-top: 10px;
+        }
+        .report-item .action-buttons a {
+            display: inline-block;
+            padding: 8px 12px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+        .report-item .action-buttons a:hover {
+            background-color: #0056b3;
+        }
+        .report-item .action-buttons button {
+            padding: 8px 12px;
+            background-color: #dc3545; /* Red for delete */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .report-item .action-buttons button:hover {
+            background-color: #c82333;
+        }
+        .status-message {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .status-message.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status-message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        #reports-list {
+            margin-top: 20px;
+        }
+        #reports-list p {
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>TextShare Report Viewer (Admin)</h1>
+
+        <div id="password-section">
+            <input type="password" id="admin-password" placeholder="Enter Admin Password">
+            <button id="login-admin-button">Log In</button>
+            <div id="password-status" class="status-message"></div>
+        </div>
+
+        <div id="viewer-content">
+            <h2>Recent Reports</h2>
+            <div id="reports-list">
+                <p>No reports to display.</p>
+            </div>
+            <div id="action-status" class="status-message"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebasestorage.app",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const ADMIN_PASSWORD = "24681012ear"; // !!! WARNING: DO NOT USE IN PRODUCTION !!!
+
+        const adminPasswordInput = document.getElementById('admin-password');
+        const loginAdminButton = document.getElementById('login-admin-button');
+        const passwordStatusDiv = document.getElementById('password-status');
+        const viewerContentDiv = document.getElementById('viewer-content');
+        const reportsListDiv = document.getElementById('reports-list');
+        const actionStatusDiv = document.getElementById('action-status');
+
+        loginAdminButton.addEventListener('click', () => {
+            if (adminPasswordInput.value === ADMIN_PASSWORD) {
+                passwordStatusDiv.className = 'status-message success';
+                passwordStatusDiv.textContent = 'Access Granted!';
+                passwordStatusDiv.style.display = 'block';
+                viewerContentDiv.style.display = 'block'; // Show the viewer content
+                document.getElementById('password-section').style.display = 'none'; // Hide password input
+                loadReports();
+            } else {
+                passwordStatusDiv.className = 'status-message error';
+                passwordStatusDiv.textContent = 'Incorrect Password.';
+                passwordStatusDiv.style.display = 'block';
+            }
+        });
+
+        async function loadReports() {
+            reportsListDiv.innerHTML = '<p>Loading reports...</p>';
+            actionStatusDiv.textContent = ''; // Clear previous status
+
+            try {
+                const querySnapshot = await getDocs(collection(db, "reports"));
+                reportsListDiv.innerHTML = ''; // Clear loading message
+
+                if (querySnapshot.empty) {
+                    reportsListDiv.innerHTML = '<p>No reports found.</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const reportData = doc.data();
+                    const reportId = doc.id;
+                    const timestamp = reportData.timestamp ? reportData.timestamp.toDate() : new Date();
+                    const formattedDate = timestamp.toLocaleString(); // Use local string for readability
+
+                    const reportItem = document.createElement('div');
+                    reportItem.className = 'report-item';
+                    reportItem.setAttribute('data-report-id', reportId); // Store report ID for deletion
+
+                    reportItem.innerHTML = `
+                        <div class="meta-info">Report ID: <strong>${reportId}</strong> | Reported at: <strong>${formattedDate}</strong></div>
+                        <p><strong>Reported Link:</strong> <a href="${reportData.reportedLink}" target="_blank">${reportData.reportedLink}</a></p>
+                        <p><strong>Additional Info:</strong> ${reportData.additionalInfo || 'N/A'}</p>
+                        <p><strong>Reporter UID:</strong> ${reportData.reporterUid || 'Anonymous'}</p>
+                        <div class="action-buttons">
+                            <a href="${reportData.reportedLink}" target="_blank">View Reported Content</a>
+                            <button onclick="removeReportedContent('${reportId}', '${reportData.reportedLink}')">Remove Reported Content</button>
+                        </div>
+                    `;
+                    reportsListDiv.appendChild(reportItem);
+                });
+            } catch (error) {
+                reportsListDiv.innerHTML = `<p class="status-message error">Error loading reports: ${error.message}</p>`;
+                console.error("Error loading reports:", error);
+            }
+        }
+
+        // Function to extract textId from a given link
+        function extractTextIdFromLink(link) {
+            try {
+                const url = new URL(link);
+                // Assuming the format is like: https://githubuser102234.github.io/NoteShare/#text-SOMEID
+                const hash = url.hash;
+                if (hash.startsWith('#text-')) {
+                    return hash.substring(6);
+                }
+            } catch (e) {
+                console.error("Invalid URL format:", link, e);
+            }
+            return null;
+        }
+
+        // This function will attempt to delete the report and the associated text content.
+        // !!! IMPORTANT: THIS CLIENT-SIDE DELETION IS NOT SECURE FOR PRODUCTION !!!
+        // A Cloud Function should handle the deletion of original content.
+        window.removeReportedContent = async (reportId, reportedLink) => {
+            if (!confirm('Are you absolutely sure you want to REMOVE this report AND attempt to DELETE the reported text content? This action cannot be undone.')) {
+                return;
+            }
+
+            actionStatusDiv.textContent = 'Processing...';
+            actionStatusDiv.className = 'status-message'; // Reset class
+
+            try {
+                // 1. Delete the report itself from the 'reports' collection
+                await deleteDoc(doc(db, "reports", reportId));
+                console.log("Report deleted from 'reports' collection:", reportId);
+
+                // 2. Attempt to delete the original shared text content
+                const textId = extractTextIdFromLink(reportedLink);
+                if (textId) {
+                    await deleteDoc(doc(db, "texts", textId));
+                    console.log("Original text deleted from 'texts' collection:", textId);
+                    actionStatusDiv.className = 'status-message success';
+                    actionStatusDiv.textContent = `Report ${reportId} and associated text ${textId} successfully removed.`;
+                } else {
+                    actionStatusDiv.className = 'status-message success';
+                    actionStatusDiv.textContent = `Report ${reportId} removed. Could not extract text ID from link to remove content.`;
+                }
+
+                // Remove the report item from the UI
+                const reportItemElement = document.querySelector(`.report-item[data-report-id="${reportId}"]`);
+                if (reportItemElement) {
+                    reportItemElement.remove();
+                }
+                // If no reports left, update message
+                if (reportsListDiv.children.length === 0) {
+                    reportsListDiv.innerHTML = '<p>No reports found.</p>';
+                }
+
+            } catch (error) {
+                actionStatusDiv.className = 'status-message error';
+                actionStatusDiv.textContent = `Error removing content: ${error.message}. Check console for details.`;
+                console.error("Error removing report or text:", error);
+                // Even if deleting original text fails, the report should still be removed from the list.
+                const reportItemElement = document.querySelector(`.report-item[data-report-id="${reportId}"]`);
+                if (reportItemElement) {
+                    reportItemElement.remove(); // Still remove report from UI if the report itself was deleted
+                }
+            }
+            // Reload reports to reflect changes, especially if something went wrong but the report was removed
+            loadReports();
+        };
+
+        // Initially check if password is already provided (e.g., in a session, not implemented here)
+        // For this simple example, we just wait for the button click.
+    </script>
+</body>
+</html>
