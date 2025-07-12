@@ -178,7 +178,7 @@
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
                 <button id="public-copy-link-button">Copy Link</button>
-                <span id="public-copy-status" class="copy-status"></span>
+                <button id="report-button">Report</button> <span id="public-copy-status" class="copy-status"></span>
             </div>
             <div id="public-view-status"></div>
             <button id="go-back-button" class="hidden">Go Back to My Texts</button>
@@ -234,6 +234,7 @@
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
         const publicCopyLinkButton = document.getElementById('public-copy-link-button');
+        const reportButton = document.getElementById('report-button'); // NEW REPORT BUTTON
         const publicCopyStatus = document.getElementById('public-copy-status');
         const publicViewStatus = document.getElementById('public-view-status');
         const goBackButton = document.getElementById('go-back-button'); // New
@@ -461,10 +462,11 @@
                     publicViewStatus.className = 'success';
                     publicViewStatus.textContent = 'Text loaded successfully.';
 
-                    // Attach event listeners for public download/raw/copy buttons
+                    // Attach event listeners for public download/raw/copy/report buttons
                     publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
                     publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
                     publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
+                    reportButton.onclick = () => window.location.href = 'https://githubuser102234.github.io/NoteShare/report'; // NEW REPORT BUTTON CLICK HANDLER
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
@@ -476,6 +478,7 @@
                     publicDownloadButton.onclick = null;
                     publicRawButton.onclick = null;
                     publicCopyLinkButton.onclick = null; // Disable copy button too
+                    reportButton.onclick = null; // Disable report button
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
@@ -487,6 +490,7 @@
                 publicDownloadButton.onclick = null;
                 publicRawButton.onclick = null;
                 publicCopyLinkButton.onclick = null; // Disable copy button too
+                reportButton.onclick = null; // Disable report button
             }
         };
 
