@@ -39,9 +39,20 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            margin-right: 10px; /* Added for spacing between buttons */
+            margin-bottom: 10px; /* Added for spacing below buttons */
         }
         button:hover {
             background-color: #0056b3;
+        }
+        .forgot-password-button {
+            background-color: #6c757d; /* A different color for distinction */
+            font-size: 0.9em;
+            padding: 8px 12px;
+            margin-top: 5px;
+        }
+        .forgot-password-button:hover {
+            background-color: #5a6268;
         }
         #auth-status, #message, #public-view-status {
             margin-top: 10px;
@@ -136,6 +147,7 @@
             <input type="password" id="password" placeholder="Password" required>
             <button id="signup-button">Sign Up</button>
             <button id="login-button">Log In</button>
+            <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
             <button id="logout-button" class="hidden">Log Out</button>
             <div id="auth-status"></div>
         </div>
@@ -178,7 +190,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         // Import Timestamp from Firestore to store dates correctly
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
         import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
@@ -203,6 +215,7 @@
         const passwordInput = document.getElementById('password');
         const signupButton = document.getElementById('signup-button');
         const loginButton = document.getElementById('login-button');
+        const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
         const logoutButton = document.getElementById('logout-button');
         const authStatusDiv = document.getElementById('auth-status');
         const createTextSection = document.getElementById('create-text-section');
@@ -256,6 +269,24 @@
             }
         });
 
+        // New: Forgot Password functionality
+        forgotPasswordButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            if (!email) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please enter your email to reset password.';
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Password reset email sent to ${email}. Please check your inbox.`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error sending password reset email: ${error.message}`;
+            }
+        });
+
         logoutButton.addEventListener('click', async () => {
             try {
                 await signOut(auth);
@@ -277,7 +308,7 @@
             createTextSection.classList.add('hidden');
             sharedTextsSection.classList.add('hidden');
             publicTextViewSection.classList.add('hidden');
-            logoutButton.classList.add('hidden');
+            // logoutButton.classList.add('hidden'); // Keep this line here as it will be shown conditionally
             goBackButton.classList.add('hidden');
 
             if (showPublicView) {
@@ -287,9 +318,17 @@
             } else if (currentUser) {
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
-                logoutButton.classList.remove('hidden');
+                document.getElementById('auth-section').classList.remove('hidden'); // Show auth section to display Logout button
+                logoutButton.classList.remove('hidden'); // Show logout button
+                signupButton.classList.add('hidden'); // Hide signup button when logged in
+                loginButton.classList.add('hidden'); // Hide login button when logged in
+                forgotPasswordButton.classList.add('hidden'); // Hide forgot password button when logged in
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
+                logoutButton.classList.add('hidden'); // Hide logout button when logged out
+                signupButton.classList.remove('hidden'); // Show signup button when logged out
+                loginButton.classList.remove('hidden'); // Show login button when logged out
+                forgotPasswordButton.classList.remove('hidden'); // Show forgot password button when logged out
             }
             authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
             authStatusDiv.className = currentUser ? 'success' : '';
