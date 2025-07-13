@@ -263,7 +263,7 @@
         const passwordInput = document.getElementById('password');
         const signupButton = document.getElementById('signup-button');
         const loginButton = document.getElementById('login-button');
-        const forgotPasswordButton = document.getElementById('forgot-password-button');
+        const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
         const logoutButton = document.getElementById('logout-button');
         const authStatusDiv = document.getElementById('auth-status');
         const createTextSection = document.getElementById('create-text-section');
@@ -277,15 +277,15 @@
         // New elements for public view
         const publicTextViewSection = document.getElementById('public-text-view');
         const publicTextTitle = document.getElementById('public-text-title');
-        const publicTextTimestamp = document.getElementById('public-text-timestamp');
+        const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
         const publicTextContent = document.getElementById('public-text-content');
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
         const publicCopyLinkButton = document.getElementById('public-copy-link-button');
-        const reportButton = document.getElementById('report-button');
+        const reportButton = document.getElementById('report-button'); // NEW REPORT BUTTON
         const publicCopyStatus = document.getElementById('public-copy-status');
         const publicViewStatus = document.getElementById('public-view-status');
-        const goBackButton = document.getElementById('go-back-button');
+        const goBackButton = document.getElementById('go-back-button'); // New
 
         // New elements for comments
         const commentsList = document.getElementById('comments-list');
@@ -295,8 +295,8 @@
         const commentMessage = document.getElementById('comment-message');
         const commentLoginPrompt = document.getElementById('comment-login-prompt');
 
-        let currentUser = null;
-        let currentViewedText = null;
+        let currentUser = null; // To store the current logged-in user
+        let currentViewedText = null; // To store text data for public view
 
         // --- Authentication Functions ---
 
@@ -326,6 +326,7 @@
             }
         });
 
+        // New: Forgot Password functionality
         forgotPasswordButton.addEventListener('click', async () => {
             const email = emailInput.value;
             if (!email) {
@@ -346,8 +347,9 @@
         logoutButton.addEventListener('click', async () => {
             try {
                 await signOut(auth);
-                window.location.hash = '';
-                displayMainUI();
+                // When logged out, clear the hash and show the default (auth) view
+                window.location.hash = ''; // Remove hash
+                displayMainUI(); // Go back to default UI state
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = 'Successfully logged out.';
             } catch (error) {
@@ -356,7 +358,9 @@
             }
         });
 
+        // Function to control UI visibility
         function displayMainUI(showPublicView = false) {
+            // Hide all sections first
             document.getElementById('auth-section').classList.add('hidden');
             createTextSection.classList.add('hidden');
             sharedTextsSection.classList.add('hidden');
@@ -365,6 +369,7 @@
 
             if (showPublicView) {
                 publicTextViewSection.classList.remove('hidden');
+                // Manage comment section visibility based on login status
                 if (currentUser) {
                     commentInputArea.classList.remove('hidden');
                     commentLoginPrompt.classList.add('hidden');
@@ -375,34 +380,37 @@
             } else if (currentUser) {
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
-                document.getElementById('auth-section').classList.remove('hidden');
-                logoutButton.classList.remove('hidden');
-                signupButton.classList.add('hidden');
-                loginButton.classList.add('hidden');
-                forgotPasswordButton.classList.add('hidden');
+                document.getElementById('auth-section').classList.remove('hidden'); // Show auth section to display Logout button
+                logoutButton.classList.remove('hidden'); // Show logout button
+                signupButton.classList.add('hidden'); // Hide signup button when logged in
+                loginButton.classList.add('hidden'); // Hide login button when logged in
+                forgotPasswordButton.classList.add('hidden'); // Hide forgot password button when logged in
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
-                logoutButton.classList.add('hidden');
-                signupButton.classList.remove('hidden');
-                loginButton.classList.remove('hidden');
-                forgotPasswordButton.classList.remove('hidden');
+                logoutButton.classList.add('hidden'); // Hide logout button when logged out
+                signupButton.classList.remove('hidden'); // Show signup button when logged out
+                loginButton.classList.remove('hidden'); // Show login button when logged out
+                forgotPasswordButton.classList.remove('hidden'); // Show forgot password button when logged out
             }
             authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
             authStatusDiv.className = currentUser ? 'success' : '';
         }
 
+
+        // Listen for authentication state changes
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
+            // When auth state changes, re-evaluate UI based on hash (if any) or login status
             const hash = window.location.hash;
             if (hash && hash.startsWith('#text-')) {
                 const textId = hash.substring(6);
-                showPublicText(textId);
+                showPublicText(textId); // Display public text if hash is present
             } else {
-                displayMainUI(false);
+                displayMainUI(false); // Otherwise, show logged-in or auth sections
                 if (currentUser) {
-                    loadSharedTexts(currentUser.uid);
+                    loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
                 } else {
-                    sharedTextsDiv.innerHTML = '';
+                    sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
                 }
             }
         });
@@ -426,17 +434,18 @@
             }
 
             try {
+                // Store timestamp as a Firebase Timestamp
                 await addDoc(collection(db, "texts"), {
                     userId: currentUser.uid,
                     title: title,
                     content: content,
-                    timestamp: Timestamp.now()
+                    timestamp: Timestamp.now() // Use Timestamp.now()
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = 'Text shared successfully!';
                 textTitleInput.value = '';
                 textAreas.value = '';
-                loadSharedTexts(currentUser.uid);
+                loadSharedTexts(currentUser.uid); // Reload texts after sharing
             } catch (error) {
                 messageDiv.className = 'error';
                 messageDiv.textContent = `Error sharing text: ${error.message}`;
@@ -448,7 +457,7 @@
             try {
                 const q = query(collection(db, "texts"), where("userId", "==", userId));
                 const querySnapshot = await getDocs(q);
-                sharedTextsDiv.innerHTML = '';
+                sharedTextsDiv.innerHTML = ''; // Clear loading message
 
                 if (querySnapshot.empty) {
                     sharedTextsDiv.innerHTML = '<p>You haven\'t shared any texts yet.</p>';
@@ -458,13 +467,13 @@
                 querySnapshot.forEach((doc) => {
                     const textData = doc.data();
                     const textId = doc.id;
-                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
 
                     const textItem = document.createElement('div');
                     textItem.className = 'text-item';
-                    textItem.id = `text-${textId}`;
+                    textItem.id = `text-${textId}`; // Add an ID for direct linking
 
                     textItem.innerHTML = `
                         <h3><a href="#text-${textId}">${textData.title}</a></h3>
@@ -488,21 +497,16 @@
         // --- Public Text View Functions ---
 
         window.showPublicText = async (textId) => {
-            displayMainUI(true);
-            goBackButton.classList.remove('hidden');
-
-            // IMMEDIATE CLEARING AND LOADING STATES FOR ALL PUBLIC VIEW ELEMENTS
+            displayMainUI(true); // Show public view, hide others
+            goBackButton.classList.remove('hidden'); // Show go back button
             publicTextTitle.textContent = 'Loading...';
-            publicTextTimestamp.textContent = '';
+            publicTextTimestamp.textContent = ''; // Clear timestamp
             publicTextContent.textContent = 'Loading text content...';
-            publicViewStatus.textContent = '';
-            publicCopyStatus.textContent = '';
-            commentMessage.textContent = '';
-            // --- CRITICAL FIX: Clear comments list immediately before any async operations ---
-            commentsList.innerHTML = 'Loading comments...';
-            // --- END CRITICAL FIX ---
-
+            publicViewStatus.textContent = ''; // Clear previous status
+            publicCopyStatus.textContent = ''; // Clear previous copy status
             currentViewedText = null; // Clear previous text data
+            commentsList.innerHTML = 'Loading comments...'; // Clear and show loading for comments
+            commentMessage.textContent = ''; // Clear comment message
 
             try {
                 const docRef = doc(db, "texts", textId);
@@ -510,65 +514,69 @@
 
                 if (docSnap.exists()) {
                     const textData = docSnap.data();
-                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
 
                     publicTextTitle.textContent = textData.title;
-                    publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`;
+                    publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`; // Set timestamp
                     publicTextContent.textContent = textData.content;
-                    currentViewedText = { title: textData.title, content: textData.content, id: textId };
+                    currentViewedText = { title: textData.title, content: textData.content, id: textId }; // Store for buttons and link
                     publicViewStatus.className = 'success';
                     publicViewStatus.textContent = 'Text loaded successfully.';
 
+                    // Attach event listeners for public download/raw/copy/report buttons
                     publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
                     publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
                     publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
+                    // NEW REPORT BUTTON CLICK HANDLER: Pass the current note's link
                     reportButton.onclick = () => {
                         const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
                         const reportUrl = `https://githubuser102234.github.io/NoteShare/report?link=${encodeURIComponent(currentNoteLink)}`;
                         window.location.href = reportUrl;
                     };
 
-                    await loadComments(textId); // Load comments after text data is successfully retrieved
+                    // Load comments for the current text
+                    await loadComments(textId);
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
-                    publicTextTimestamp.textContent = '';
+                    publicTextTimestamp.textContent = ''; // Clear timestamp
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicViewStatus.className = 'error';
                     publicViewStatus.textContent = 'Text not found.';
+                    // Disable buttons if text not found
                     publicDownloadButton.onclick = null;
                     publicRawButton.onclick = null;
-                    publicCopyLinkButton.onclick = null;
-                    reportButton.onclick = null;
-                    commentsList.innerHTML = '<p>No comments available for this text.</p>'; // Ensure comments are cleared
-                    commentInputArea.classList.add('hidden');
-                    commentLoginPrompt.classList.add('hidden');
+                    publicCopyLinkButton.onclick = null; // Disable copy button too
+                    reportButton.onclick = null; // Disable report button
+                    commentsList.innerHTML = '<p>No comments available for this text.</p>'; // No comments if text not found
+                    commentInputArea.classList.add('hidden'); // Hide comment input
+                    commentLoginPrompt.classList.add('hidden'); // Hide login prompt
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
-                publicTextTimestamp.textContent = '';
+                publicTextTimestamp.textContent = ''; // Clear timestamp
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicViewStatus.className = 'error';
                 publicViewStatus.textContent = `Error loading text: ${error.message}`;
+                // Disable buttons
                 publicDownloadButton.onclick = null;
                 publicRawButton.onclick = null;
-                publicCopyLinkButton.onclick = null;
-                reportButton.onclick = null;
-                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`; // Ensure comments are cleared
-                commentInputArea.classList.add('hidden');
-                commentLoginPrompt.classList.add('hidden');
+                publicCopyLinkButton.onclick = null; // Disable copy button too
+                reportButton.onclick = null; // Disable report button
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+                commentInputArea.classList.add('hidden'); // Hide comment input
+                commentLoginPrompt.classList.add('hidden'); // Hide login prompt
             }
         };
 
         // --- Comment Functions ---
 
         async function loadComments(textId) {
-            // This line ensures the list is empty before adding new comments.
-            // It's here, and also at the start of showPublicText, for maximum robustness.
-            commentsList.innerHTML = '';
+            commentsList.innerHTML = ''; // Clear existing comments
             try {
+                // Query comments collection for comments related to this textId, ordered by timestamp
                 const q = query(collection(db, "comments"), where("textId", "==", textId), orderBy("timestamp", "asc"));
                 const querySnapshot = await getDocs(q);
 
@@ -580,7 +588,7 @@
                 querySnapshot.forEach((doc) => {
                     const commentData = doc.data();
                     const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
-                    const formattedDate = date.toLocaleString();
+                    const formattedDate = date.toLocaleString(); // e.g., "1/1/2023, 10:30:00 AM"
 
                     const commentItem = document.createElement('div');
                     commentItem.className = 'comment-item';
@@ -615,13 +623,13 @@
                 await addDoc(collection(db, "comments"), {
                     textId: currentViewedText.id,
                     userId: currentUser.uid,
-                    userEmail: currentUser.email,
+                    userEmail: currentUser.email, // Store user email for display
                     content: commentContent,
                     timestamp: Timestamp.now()
                 });
                 commentMessage.className = 'success';
                 commentMessage.textContent = 'Comment posted successfully!';
-                newCommentContent.value = '';
+                newCommentContent.value = ''; // Clear the input field
                 await loadComments(currentViewedText.id); // Reload comments to show the new one
             } catch (error) {
                 commentMessage.className = 'error';
@@ -648,6 +656,7 @@
         };
 
         window.copyShareLink = async (textId, buttonElement) => {
+            // Corrected shareLink to include the GitHub Pages repository name
             const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
             let statusElement;
 
@@ -661,7 +670,7 @@
                 await navigator.clipboard.writeText(shareLink);
                 statusElement.className = 'copy-status success';
                 statusElement.textContent = 'Copied!';
-                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000); // Clear after 2 seconds
             } catch (err) {
                 statusElement.className = 'copy-status error';
                 statusElement.textContent = 'Failed to copy!';
@@ -669,6 +678,7 @@
                 setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
             }
         };
+
 
         window.deleteText = async (textId) => {
             if (!currentUser) {
@@ -680,8 +690,10 @@
                 return;
             }
             try {
+                // Delete text document
                 await deleteDoc(doc(db, "texts", textId));
 
+                // Also delete all comments associated with this text
                 const q = query(collection(db, "comments"), where("textId", "==", textId));
                 const querySnapshot = await getDocs(q);
                 const deletePromises = [];
@@ -690,15 +702,21 @@
                 });
                 await Promise.all(deletePromises);
 
+
                 messageDiv.className = 'success';
                 messageDiv.textContent = 'Text and associated comments deleted successfully!';
-                loadSharedTexts(currentUser.uid);
+                loadSharedTexts(currentUser.uid); // Reload texts after deletion
             } catch (error) {
                 messageDiv.className = 'error';
                 messageDiv.textContent = `Error deleting text: ${error.message}`;
             }
         };
 
+        /**
+         * Formats a given Date object into a human-readable "time ago" string.
+         * @param {Date} date - The date to format.
+         * @returns {string} - The formatted string (e.g., "5 minutes ago", "2 days ago").
+         */
         function formatTimeAgo(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
 
@@ -725,14 +743,17 @@
             return Math.floor(seconds) + " seconds ago";
         }
 
+
         // --- Initial Load Logic and Hash Change Listener ---
 
+        // Handle hash changes (when user clicks a #link or changes URL hash manually)
         window.addEventListener('hashchange', () => {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#text-')) {
-                const textId = hash.substring(6);
+                const textId = hash.substring(6); // Remove '#text-' prefix
                 showPublicText(textId);
             } else {
+                // If hash is cleared or not a text hash, display the appropriate UI
                 displayMainUI(false);
                 if (currentUser) {
                     loadSharedTexts(currentUser.uid);
@@ -740,19 +761,23 @@
             }
         });
 
+        // Handle initial page load
         window.addEventListener('load', () => {
             const hash = window.location.hash;
             if (hash && hash.startsWith('#text-')) {
-                const textId = hash.substring(6);
+                const textId = hash.substring(6); // Remove '#text-' prefix
                 showPublicText(textId);
             } else {
-                // onAuthStateChanged will handle the initial display for logged-in/out states.
+                // Initial display when no hash is present
+                // onAuthStateChanged will handle this for initial load too.
             }
         });
 
+        // Add 'Go Back' button functionality
         goBackButton.addEventListener('click', () => {
-            window.location.hash = '';
+            window.location.hash = ''; // Clear the hash, triggering the hashchange listener
         });
+
     </script>
 </body>
 </html>
