@@ -28,6 +28,7 @@ NoteShare is a simple and clean web app that lets users **create**, **share**, a
   - 🧾 View the raw (plain text) version  
   - 📥 Download the note as a text file  
   - 🔗 Copy the shareable link with one click
+  - 🚩 Report notes if they violate the [Community Guidelines](https://githubuser102234.github.io/NoteShare/Communityguidelines).
 
 - 🗑️ **Owner Control**  
   Logged-in users who own a note can delete it at any time.
