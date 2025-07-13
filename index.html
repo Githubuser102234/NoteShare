@@ -491,14 +491,16 @@
             displayMainUI(true);
             goBackButton.classList.remove('hidden');
 
-            // Always clear and show loading messages immediately
+            // IMMEDIATE CLEARING AND LOADING STATES FOR ALL PUBLIC VIEW ELEMENTS
             publicTextTitle.textContent = 'Loading...';
             publicTextTimestamp.textContent = '';
             publicTextContent.textContent = 'Loading text content...';
             publicViewStatus.textContent = '';
             publicCopyStatus.textContent = '';
             commentMessage.textContent = '';
-            commentsList.innerHTML = 'Loading comments...'; // Crucial: clear comments immediately
+            // --- CRITICAL FIX: Clear comments list immediately before any async operations ---
+            commentsList.innerHTML = 'Loading comments...';
+            // --- END CRITICAL FIX ---
 
             currentViewedText = null; // Clear previous text data
 
@@ -528,7 +530,7 @@
                         window.location.href = reportUrl;
                     };
 
-                    await loadComments(textId); // Load comments after text is displayed
+                    await loadComments(textId); // Load comments after text data is successfully retrieved
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
@@ -536,12 +538,11 @@
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicViewStatus.className = 'error';
                     publicViewStatus.textContent = 'Text not found.';
-                    // Disable buttons if text not found
                     publicDownloadButton.onclick = null;
                     publicRawButton.onclick = null;
                     publicCopyLinkButton.onclick = null;
                     reportButton.onclick = null;
-                    commentsList.innerHTML = '<p>No comments available for this text.</p>';
+                    commentsList.innerHTML = '<p>No comments available for this text.</p>'; // Ensure comments are cleared
                     commentInputArea.classList.add('hidden');
                     commentLoginPrompt.classList.add('hidden');
                 }
@@ -551,12 +552,11 @@
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicViewStatus.className = 'error';
                 publicViewStatus.textContent = `Error loading text: ${error.message}`;
-                // Disable buttons
                 publicDownloadButton.onclick = null;
                 publicRawButton.onclick = null;
                 publicCopyLinkButton.onclick = null;
                 reportButton.onclick = null;
-                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`; // Ensure comments are cleared
                 commentInputArea.classList.add('hidden');
                 commentLoginPrompt.classList.add('hidden');
             }
@@ -565,7 +565,8 @@
         // --- Comment Functions ---
 
         async function loadComments(textId) {
-            // This line is essential and correctly placed for clearing previous comments
+            // This line ensures the list is empty before adding new comments.
+            // It's here, and also at the start of showPublicText, for maximum robustness.
             commentsList.innerHTML = '';
             try {
                 const q = query(collection(db, "comments"), where("textId", "==", textId), orderBy("timestamp", "asc"));
@@ -745,8 +746,7 @@
                 const textId = hash.substring(6);
                 showPublicText(textId);
             } else {
-                // If no hash, and user is logged in, onAuthStateChanged will handle loading texts.
-                // If not logged in, it will show the auth section.
+                // onAuthStateChanged will handle the initial display for logged-in/out states.
             }
         });
 
