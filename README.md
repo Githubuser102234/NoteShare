@@ -17,6 +17,12 @@ NoteShare is a simple and clean web app that lets users **create**, **share**, a
 - 🌍 **Public Access**  
   Shared notes can be viewed by **anyone**, whether logged in or not.
 
+- 💬 **Comment on Notes**  
+ Logged in users can leave comments on shared notes to discuss or give feedback.
+
+- 🚩 **Report Notes**  
+  Notes can be reported if they violate the [Community Guidelines](https://githubuser102234.github.io/NoteShare/Communityguidelines).
+
 - 📎 **Link Options**  
   - 📄 View the note in a clean interface  
   - 🧾 View the raw (plain text) version  
