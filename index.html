@@ -220,7 +220,7 @@
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
                 <button id="public-copy-link-button">Copy Link</button>
-                <button id="report-button">Report</button> <span id="public-copy-status" class="copy-status"></span>
+                <button id="public-share-button">Share Text</button> <button id="report-button">Report</button> <span id="public-copy-status" class="copy-status"></span>
             </div>
             <div id="public-view-status"></div>
             <button id="go-back-button" class="hidden">Go Back to My Texts</button>
@@ -291,6 +291,7 @@
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
         const publicCopyLinkButton = document.getElementById('public-copy-link-button');
+        const publicShareButton = document.getElementById('public-share-button'); // NEW SHARE BUTTON
         const reportButton = document.getElementById('report-button'); // NEW REPORT BUTTON
         const publicCopyStatus = document.getElementById('public-copy-status');
         const publicViewStatus = document.getElementById('public-view-status');
@@ -496,7 +497,7 @@
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
                             <button onclick="viewRawText('${encodeURIComponent(textData.content)}')">View Raw</button>
                             <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
-                            <span class="copy-status" id="copy-status-${textId}"></span>
+                            <button onclick="shareTextNative('${textId}', '${textData.title}')">Share Text</button> <span class="copy-status" id="copy-status-${textId}"></span>
                             <button onclick="deleteText('${textId}')">Delete</button>
                             <button class="${disableButtonClass}" onclick="window.toggleCommentsDisabled('${textId}', ${commentsDisabled})">${disableButtonText}</button>
                             <button class="${lockButtonClass}" onclick="window.toggleCommentsLocked('${textId}', ${commentsLocked})">${lockButtonText}</button>
@@ -548,10 +549,11 @@
                     publicViewStatus.className = 'success';
                     publicViewStatus.textContent = 'Text loaded successfully.';
 
-                    // Attach event listeners for public download/raw/copy/report buttons
+                    // Attach event listeners for public download/raw/copy/report/share buttons
                     publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
                     publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
                     publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
+                    publicShareButton.onclick = () => shareTextNative(currentViewedText.id, currentViewedText.title); // NEW SHARE BUTTON CLICK HANDLER
                     // NEW REPORT BUTTON CLICK HANDLER: Pass the current note's link
                     reportButton.onclick = () => {
                         const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
@@ -594,6 +596,7 @@
                     publicDownloadButton.onclick = null;
                     publicRawButton.onclick = null;
                     publicCopyLinkButton.onclick = null; // Disable copy button too
+                    publicShareButton.onclick = null; // Disable share button too
                     reportButton.onclick = null; // Disable report button
                     commentsList.innerHTML = '<p>No comments available for this text.</p>'; // No comments if text not found
                     commentInputArea.classList.add('hidden'); // Hide comment input
@@ -610,6 +613,7 @@
                 publicDownloadButton.onclick = null;
                 publicRawButton.onclick = null;
                 publicCopyLinkButton.onclick = null; // Disable copy button too
+                publicShareButton.onclick = null; // Disable share button too
                 reportButton.onclick = null; // Disable report button
                 commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
                 commentInputArea.classList.add('hidden'); // Hide comment input
@@ -779,6 +783,26 @@
             }
         };
 
+        // NEW: shareTextNative function for Web Share API
+        window.shareTextNative = async (textId, title) => {
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `TextShare: ${title}`,
+                        url: shareLink,
+                    });
+                    console.log('Text shared successfully');
+                } catch (error) {
+                    console.error('Error sharing text:', error);
+                }
+            } else {
+                // Fallback for browsers that do not support Web Share API
+                alert('Your browser does not support the Web Share API. You can copy the link instead.');
+                // Optionally, you could automatically copy the link to clipboard here as a fallback
+                // window.copyShareLink(textId, publicCopyLinkButton); // Or any relevant button for feedback
+            }
+        };
 
         window.deleteText = async (textId) => {
             if (!currentUser) {
