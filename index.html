@@ -168,6 +168,14 @@
             margin-top: 5px;
             display: block;
         }
+        .comments-status {
+            font-style: italic;
+            color: #d9534f; /* Reddish for warning/status */
+            margin-bottom: 10px;
+        }
+        .toggle-button.active {
+            background-color: #28a745; /* Green for active/enabled */
+        }
     </style>
 </head>
 <body>
@@ -206,7 +214,8 @@
         <div id="public-text-view" class="hidden">
             <h2>Viewing Shared Text</h2>
             <h3 id="public-text-title"></h3>
-            <span id="public-text-timestamp" class="text-timestamp"></span> <pre id="public-text-content"></pre>
+            <span id="public-text-timestamp" class="text-timestamp"></span>
+            <pre id="public-text-content"></pre>
             <div id="public-text-actions">
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
@@ -218,7 +227,7 @@
 
             <div class="comments-section">
                 <h3>Comments</h3>
-                <div id="comments-list">
+                <p id="comments-status-message" class="comments-status"></p> <div id="comments-list">
                     </div>
                 <div id="comment-input-area" class="hidden">
                     <h4>Add a Comment</h4>
@@ -239,7 +248,7 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         // Import Timestamp from Firestore to store dates correctly
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -294,6 +303,7 @@
         const postCommentButton = document.getElementById('post-comment-button');
         const commentMessage = document.getElementById('comment-message');
         const commentLoginPrompt = document.getElementById('comment-login-prompt');
+        const commentsStatusMessage = document.getElementById('comments-status-message'); // New
 
         let currentUser = null; // To store the current logged-in user
         let currentViewedText = null; // To store text data for public view
@@ -369,14 +379,6 @@
 
             if (showPublicView) {
                 publicTextViewSection.classList.remove('hidden');
-                // Manage comment section visibility based on login status
-                if (currentUser) {
-                    commentInputArea.classList.remove('hidden');
-                    commentLoginPrompt.classList.add('hidden');
-                } else {
-                    commentInputArea.classList.add('hidden');
-                    commentLoginPrompt.classList.remove('hidden');
-                }
             } else if (currentUser) {
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
@@ -434,12 +436,14 @@
             }
 
             try {
-                // Store timestamp as a Firebase Timestamp
+                // Store timestamp as a Firebase Timestamp, and add new comment control fields
                 await addDoc(collection(db, "texts"), {
                     userId: currentUser.uid,
                     title: title,
                     content: content,
-                    timestamp: Timestamp.now() // Use Timestamp.now()
+                    timestamp: Timestamp.now(), // Use Timestamp.now()
+                    commentsDisabled: false, // New: Comments are enabled by default
+                    commentsLocked: false // New: Comments are unlocked by default
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = 'Text shared successfully!';
@@ -464,12 +468,21 @@
                     return;
                 }
 
-                querySnapshot.forEach((doc) => {
-                    const textData = doc.data();
-                    const textId = doc.id;
+                querySnapshot.forEach((docSnap) => {
+                    const textData = docSnap.data();
+                    const textId = docSnap.id;
                     const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
+
+                    const commentsDisabled = textData.commentsDisabled || false; // Default to false if not set
+                    const commentsLocked = textData.commentsLocked || false;     // Default to false if not set
+
+                    const disableButtonText = commentsDisabled ? 'Enable Comments' : 'Disable Comments';
+                    const disableButtonClass = commentsDisabled ? 'toggle-button active' : 'toggle-button';
+
+                    const lockButtonText = commentsLocked ? 'Unlock Comments' : 'Lock Comments';
+                    const lockButtonClass = commentsLocked ? 'toggle-button active' : 'toggle-button';
 
                     const textItem = document.createElement('div');
                     textItem.className = 'text-item';
@@ -485,6 +498,8 @@
                             <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
                             <span class="copy-status" id="copy-status-${textId}"></span>
                             <button onclick="deleteText('${textId}')">Delete</button>
+                            <button class="${disableButtonClass}" onclick="window.toggleCommentsDisabled('${textId}', ${commentsDisabled})">${disableButtonText}</button>
+                            <button class="${lockButtonClass}" onclick="window.toggleCommentsLocked('${textId}', ${commentsLocked})">${lockButtonText}</button>
                         </div>
                     `;
                     sharedTextsDiv.appendChild(textItem);
@@ -507,6 +522,7 @@
             currentViewedText = null; // Clear previous text data
             commentsList.innerHTML = 'Loading comments...'; // Clear and show loading for comments
             commentMessage.textContent = ''; // Clear comment message
+            commentsStatusMessage.textContent = ''; // Clear comment status message
 
             try {
                 const docRef = doc(db, "texts", textId);
@@ -521,7 +537,14 @@
                     publicTextTitle.textContent = textData.title;
                     publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`; // Set timestamp
                     publicTextContent.textContent = textData.content;
-                    currentViewedText = { title: textData.title, content: textData.content, id: textId }; // Store for buttons and link
+                    currentViewedText = {
+                        title: textData.title,
+                        content: textData.content,
+                        id: textId,
+                        commentsDisabled: textData.commentsDisabled || false,
+                        commentsLocked: textData.commentsLocked || false
+                    }; // Store for buttons and link
+
                     publicViewStatus.className = 'success';
                     publicViewStatus.textContent = 'Text loaded successfully.';
 
@@ -536,8 +559,30 @@
                         window.location.href = reportUrl;
                     };
 
-                    // Load comments for the current text
-                    await loadComments(textId);
+                    // Control comment section visibility based on commentsDisabled and commentsLocked
+                    if (currentViewedText.commentsDisabled) {
+                        commentsStatusMessage.textContent = 'Comments are disabled for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsList.innerHTML = '<p>Comments are disabled.</p>';
+                    } else if (currentViewedText.commentsLocked) {
+                         commentsStatusMessage.textContent = 'Comments are locked for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    }
+                    else if (currentUser) {
+                        commentInputArea.classList.remove('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    } else {
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.remove('hidden');
+                    }
+
+                    // Load comments only if not explicitly disabled
+                    if (!currentViewedText.commentsDisabled) {
+                        await loadComments(textId);
+                    }
+
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
@@ -553,6 +598,7 @@
                     commentsList.innerHTML = '<p>No comments available for this text.</p>'; // No comments if text not found
                     commentInputArea.classList.add('hidden'); // Hide comment input
                     commentLoginPrompt.classList.add('hidden'); // Hide login prompt
+                    commentsStatusMessage.textContent = ''; // Clear message
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
@@ -568,6 +614,7 @@
                 commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
                 commentInputArea.classList.add('hidden'); // Hide comment input
                 commentLoginPrompt.classList.add('hidden'); // Hide login prompt
+                commentsStatusMessage.textContent = ''; // Clear message
             }
         };
 
@@ -611,6 +658,18 @@
                 return;
             }
 
+            // Check if comments are disabled or locked
+            if (currentViewedText.commentsDisabled) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently disabled for this text.';
+                return;
+            }
+            if (currentViewedText.commentsLocked) {
+                 commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently locked for this text.';
+                return;
+            }
+
             const commentContent = newCommentContent.value.trim();
 
             if (!commentContent) {
@@ -636,6 +695,47 @@
                 commentMessage.textContent = `Error posting comment: ${error.message}`;
             }
         });
+
+        // --- New Comment Management Functions ---
+
+        window.toggleCommentsDisabled = async (textId, currentStatus) => {
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsDisabled: !currentStatus,
+                    commentsLocked: false // If you disable comments, unlock them as well.
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'disabled' : 'enabled'} successfully!`;
+                loadSharedTexts(currentUser.uid); // Reload to update UI
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comments: ${error.message}`;
+            }
+        };
+
+        window.toggleCommentsLocked = async (textId, currentStatus) => {
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsLocked: !currentStatus
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'locked' : 'unlocked'} successfully!`;
+                loadSharedTexts(currentUser.uid); // Reload to update UI
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comment lock: ${error.message}`;
+            }
+        };
 
         // --- Utility Functions ---
 
