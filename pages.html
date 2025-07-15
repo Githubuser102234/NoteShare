@@ -98,12 +98,36 @@
 
         let currentUserId = null;
 
+        // Function to load HTML into the editor
+        async function loadHtmlIntoEditor(userId) {
+            try {
+                const docRef = doc(db, "pages", userId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    htmlEditor.value = data.html; // Set the textarea value
+                    console.log("Loaded HTML into editor.");
+                } else {
+                    console.log("No saved HTML found for this user.");
+                    htmlEditor.value = ""; // Clear editor if no content
+                }
+            } catch (e) {
+                console.error("Error loading HTML into editor:", e);
+                htmlEditor.value = ""; // Clear editor on error
+            }
+        }
+
         // Authenticate anonymously
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 currentUserId = user.uid;
                 console.log("Authenticated as:", currentUserId);
                 // After authentication, check if we need to load a page or show the editor
+                // If in editor mode (no hash), load the user's saved content
+                if (!window.location.hash) {
+                    loadHtmlIntoEditor(currentUserId);
+                }
                 checkUrlHashAndLoadPage();
             } else {
                 // Not signed in, sign in anonymously
@@ -138,7 +162,7 @@
             }
         });
 
-        // Function to load HTML
+        // Function to load HTML for viewing a page
         async function loadPage(userId) {
             try {
                 const docRef = doc(db, "pages", userId);
@@ -161,24 +185,27 @@
             }
         }
 
-        // Check URL hash for user ID and load page
+        // Check URL hash for user ID and load page or show editor
         function checkUrlHashAndLoadPage() {
             const hash = window.location.hash.substring(1); // Get hash without '#'
             if (hash) {
-                // If a hash exists, hide the editor and load the page
+                // If a hash exists, hide the editor and load the page for viewing
                 editorContainer.classList.add('hidden');
                 loadPage(hash);
             } else {
-                // If no hash, show the editor
+                // If no hash, show the editor and load previously saved HTML
                 editorContainer.classList.remove('hidden');
                 body.classList.remove('full-page-viewer'); // Remove full page viewer style
+                if (currentUserId) { // Only attempt to load if authenticated
+                    loadHtmlIntoEditor(currentUserId);
+                }
             }
         }
 
         // Listen for hash changes (e.g., if user types a new hash in the URL bar)
         window.addEventListener('hashchange', checkUrlHashAndLoadPage);
 
-        // Initial check is handled by onAuthStateChanged.
+        // Initial check is handled by onAuthStateChanged, which ensures currentUserId is set before checking the hash.
     </script>
 </body>
 </html>
