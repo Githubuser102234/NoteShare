@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Page Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        #editor-container, #viewer-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #page-viewer {
+            border: 1px solid #ddd;
+            min-height: 200px;
+            padding: 15px;
+            background-color: #e9e9e9;
+            overflow: auto;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="editor-container">
+        <h1>Create Your Page</h1>
+        <p>Enter your HTML code below and save it to create your unique page link.</p>
+        <textarea id="html-editor" placeholder="Enter your HTML code here..."></textarea>
+        <button id="save-button">Save Page</button>
+        <p id="share-link-container" class="hidden">
+            Your page is available at: <a id="share-link" href="#" target="_blank"></a>
+        </p>
+    </div>
+
+    <div id="viewer-container" class="hidden">
+        <h1>Your Page</h1>
+        <div id="page-viewer">
+            </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebasestorage.app",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const htmlEditor = document.getElementById('html-editor');
+        const saveButton = document.getElementById('save-button');
+        const shareLinkContainer = document.getElementById('share-link-container');
+        const shareLink = document.getElementById('share-link');
+        const editorContainer = document.getElementById('editor-container');
+        const viewerContainer = document.getElementById('viewer-container');
+        const pageViewer = document.getElementById('page-viewer');
+
+        let currentUserId = null;
+
+        // Authenticate anonymously
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                console.log("Authenticated as:", currentUserId);
+                // After authentication, check if we need to load a page or show the editor
+                checkUrlHashAndLoadPage();
+            } else {
+                // Not signed in, sign in anonymously
+                signInAnonymously(auth).catch((error) => {
+                    console.error("Error signing in anonymously:", error);
+                });
+            }
+        });
+
+        // Function to save HTML
+        saveButton.addEventListener('click', async () => {
+            if (!currentUserId) {
+                alert("Please wait for authentication to complete.");
+                return;
+            }
+            const htmlContent = htmlEditor.value;
+            const userId = currentUserId; // Use the authenticated user's UID
+
+            try {
+                await setDoc(doc(db, "pages", userId), {
+                    html: htmlContent,
+                    timestamp: new Date()
+                });
+                alert("Page saved successfully!");
+                const pageUrl = window.location.origin + window.location.pathname + "#" + userId;
+                shareLink.href = pageUrl;
+                shareLink.textContent = pageUrl;
+                shareLinkContainer.classList.remove('hidden');
+            } catch (e) {
+                console.error("Error saving document: ", e);
+                alert("Error saving page. Please try again.");
+            }
+        });
+
+        // Function to load HTML
+        async function loadPage(userId) {
+            try {
+                const docRef = doc(db, "pages", userId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    pageViewer.innerHTML = data.html;
+                    editorContainer.classList.add('hidden');
+                    viewerContainer.classList.remove('hidden');
+                } else {
+                    pageViewer.innerHTML = "<p>No page found for this ID.</p>";
+                    editorContainer.classList.add('hidden'); // Hide editor if no page
+                    viewerContainer.classList.remove('hidden');
+                }
+            } catch (e) {
+                console.error("Error getting document:", e);
+                pageViewer.innerHTML = "<p>Error loading page.</p>";
+                editorContainer.classList.add('hidden');
+                viewerContainer.classList.remove('hidden');
+            }
+        }
+
+        // Check URL hash for user ID and load page
+        function checkUrlHashAndLoadPage() {
+            const hash = window.location.hash.substring(1); // Get hash without '#'
+            if (hash) {
+                loadPage(hash);
+            } else {
+                editorContainer.classList.remove('hidden');
+                viewerContainer.classList.add('hidden');
+            }
+        }
+
+        // Listen for hash changes (e.g., if user types a new hash in the URL bar)
+        window.addEventListener('hashchange', checkUrlHashAndLoadPage);
+
+        // Initial check when the page loads (after Firebase auth is ready)
+        // This is handled by onAuthStateChanged now.
+    </script>
+</body>
+</html>
