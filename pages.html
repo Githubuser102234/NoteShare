@@ -5,82 +5,166 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>HTML Page Creator</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Fira+Code:wght@400;500;700&display=swap');
+
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px; /* Default margin for editor view */
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        #editor-container {
-            background-color: #fff;
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            background-color: #eef2f7; /* Lighter, modern background */
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
+
+        #editor-container, #page-list-container {
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08); /* Softer, more pronounced shadow */
+            margin-bottom: 25px;
+            width: 100%;
+            max-width: 800px; /* Constrain width for better readability */
+            box-sizing: border-box;
+            border: 1px solid #e0e6ed; /* Subtle border */
+        }
+
+        h1, h2 {
+            color: #2c3e50; /* Darker, more prominent headings */
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #444;
+        }
+
         textarea {
             width: 100%;
-            height: 300px;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            height: 350px; /* Slightly taller editor */
+            padding: 15px;
+            border: 1px solid #c8d4e3; /* Softer border */
+            border-radius: 8px;
             resize: vertical;
-            font-family: monospace;
-            font-size: 14px;
+            font-family: 'Fira Code', monospace; /* Monospaced font for code */
+            font-size: 15px;
+            background-color: #f8fbfd; /* Light background for textarea */
+            color: #222;
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Inner shadow */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
         }
+
+        textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Focus glow */
+            outline: none;
+        }
+
         input[type="text"] {
-            width: calc(100% - 22px); /* Account for padding and border */
-            padding: 10px;
-            margin-bottom: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
+            width: 100%;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border: 1px solid #c8d4e3;
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box; /* Include padding in width */
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
         }
+
+        input[type="text"]:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
         button {
             background-color: #007bff;
             color: white;
-            padding: 10px 15px;
+            padding: 12px 25px;
             border: none;
-            border-radius: 4px;
+            border-radius: 8px; /* More rounded buttons */
             cursor: pointer;
             font-size: 16px;
-            margin-right: 10px; /* Space out buttons */
+            font-weight: 500;
+            margin-right: 12px;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 10px rgba(0,123,255,0.2); /* Button shadow */
         }
+
         button:hover {
             background-color: #0056b3;
+            transform: translateY(-2px); /* Slight lift on hover */
+            box-shadow: 0 6px 15px rgba(0,123,255,0.3);
         }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 5px rgba(0,123,255,0.2);
+        }
+
+        #share-link-container {
+            margin-top: 20px;
+            text-align: center;
+            padding: 10px;
+            background-color: #e9f7ef; /* Light green for success/info */
+            border: 1px solid #d4edda;
+            border-radius: 8px;
+            color: #155724;
+            font-size: 14px;
+        }
+
+        #share-link {
+            color: #007bff;
+            text-decoration: none;
+            word-break: break-all; /* Ensures long URLs wrap */
+        }
+
+        #share-link:hover {
+            text-decoration: underline;
+            color: #0056b3;
+        }
+
         .hidden {
             display: none;
         }
 
         /* Styles for the full-page viewer mode */
         body.full-page-viewer {
-            margin: 0; /* Remove body margin */
-            padding: 0; /* Remove body padding */
-            background-color: #fff; /* Default background for viewed page */
-            overflow: auto; /* Ensure scrolling if content is larger than viewport */
+            margin: 0;
+            padding: 0;
+            background-color: #fff;
+            overflow: auto;
+            display: block; /* Override flex for full page content */
         }
-        body.full-page-viewer #editor-container {
-            display: none; /* Hide the editor completely */
+        body.full-page-viewer #editor-container,
+        body.full-page-viewer #page-list-container {
+            display: none;
         }
 
         /* Styles for the page list */
-        #page-list-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
         #page-list {
             list-style: none;
             padding: 0;
+            margin: 0;
         }
         #page-list li {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 10px 0;
+            padding: 12px 0;
             border-bottom: 1px solid #eee;
         }
         #page-list li:last-child {
@@ -90,39 +174,55 @@
             flex-grow: 1;
             cursor: pointer;
             color: #007bff;
-            text-decoration: underline;
+            text-decoration: none; /* No underline by default */
+            font-weight: 500;
+            transition: color 0.2s ease;
         }
         #page-list li span:hover {
             color: #0056b3;
+            text-decoration: underline; /* Underline on hover */
         }
         #page-list li button {
             background-color: #dc3545; /* Red for delete */
-            margin-left: 10px;
-            padding: 5px 8px;
+            margin-left: 15px;
+            padding: 8px 15px;
             font-size: 14px;
+            box-shadow: 0 3px 8px rgba(220,53,69,0.2);
         }
         #page-list li button:hover {
             background-color: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(220,53,69,0.3);
+        }
+        #page-list li button:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 3px rgba(220,53,69,0.2);
+        }
+        #no-pages-message {
+            text-align: center;
+            color: #777;
+            font-style: italic;
+            padding: 10px;
         }
     </style>
 </head>
 <body>
 
     <div id="editor-container">
-        <h1>Create Your Page</h1>
-        <p>Enter your HTML code below and save it to create your unique page link.</p>
-        <label for="page-name-input">Page Name (e.g., index, about, blog/post1):</label>
-        <input type="text" id="page-name-input" placeholder="Enter page name (defaults to 'index')">
-        <textarea id="html-editor" placeholder="Enter your HTML code here..."></textarea>
+        <h1>Craft Your Web Page</h1>
+        <p>Enter your HTML code below to bring your ideas to life. Once saved, you'll get a unique link to share your creation!</p>
+        <label for="page-name-input">Page Path (e.g., `index`, `about-us`, `blog/my-post`):</label>
+        <input type="text" id="page-name-input" placeholder="Give your page a unique name or path (defaults to 'index')">
+        <textarea id="html-editor" placeholder="Start coding your HTML here..."></textarea>
         <button id="save-button">Save Page</button>
-        <button id="view-page-button">View Current Page</button>
+        <button id="view-page-button">Preview Page</button>
         <p id="share-link-container" class="hidden">
-            Your page is available at: <a id="share-link" href="#" target="_blank"></a>
+            Your page is live at: <a id="share-link" href="#" target="_blank"></a>
         </p>
     </div>
 
     <div id="page-list-container">
-        <h2>Your Pages</h2>
+        <h2>Your Saved Pages</h2>
         <ul id="page-list">
             <p id="no-pages-message">No pages found. Start by creating one above!</p>
         </ul>
