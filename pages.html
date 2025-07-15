@@ -28,6 +28,14 @@
             font-family: monospace;
             font-size: 14px;
         }
+        input[type="text"] {
+            width: calc(100% - 22px); /* Account for padding and border */
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
         button {
             background-color: #007bff;
             color: white;
@@ -36,6 +44,7 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            margin-right: 10px; /* Space out buttons */
         }
         button:hover {
             background-color: #0056b3;
@@ -61,8 +70,11 @@
     <div id="editor-container">
         <h1>Create Your Page</h1>
         <p>Enter your HTML code below and save it to create your unique page link.</p>
+        <label for="page-name-input">Page Name (e.g., index, about, blog/post1):</label>
+        <input type="text" id="page-name-input" placeholder="Enter page name (defaults to 'index')">
         <textarea id="html-editor" placeholder="Enter your HTML code here..."></textarea>
         <button id="save-button">Save Page</button>
+        <button id="view-page-button">View Current Page</button>
         <p id="share-link-container" class="hidden">
             Your page is available at: <a id="share-link" href="#" target="_blank"></a>
         </p>
@@ -90,7 +102,9 @@
         const auth = getAuth(app);
 
         const htmlEditor = document.getElementById('html-editor');
+        const pageNameInput = document.getElementById('page-name-input');
         const saveButton = document.getElementById('save-button');
+        const viewPageButton = document.getElementById('view-page-button');
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLink = document.getElementById('share-link');
         const editorContainer = document.getElementById('editor-container');
@@ -98,23 +112,37 @@
 
         let currentUserId = null;
 
-        // Function to load HTML into the editor
-        async function loadHtmlIntoEditor(userId) {
+        /**
+         * Loads HTML content for a specific page of the current user into the editor.
+         * Defaults to 'index' if no page name is provided.
+         * @param {string} userId - The UID of the authenticated user.
+         * @param {string} [pageName='index'] - The name of the page to load.
+         */
+        async function loadHtmlIntoEditor(userId, pageName = 'index') {
             try {
-                const docRef = doc(db, "pages", userId);
+                // Construct the document reference to the specific page within the user's subcollection
+                const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     htmlEditor.value = data.html; // Set the textarea value
-                    console.log("Loaded HTML into editor.");
+                    pageNameInput.value = pageName; // Set the page name input field
+                    console.log(`Loaded HTML for page '${pageName}' into editor.`);
                 } else {
-                    console.log("No saved HTML found for this user.");
+                    console.log(`No saved HTML found for user '${userId}' and page '${pageName}'.`);
                     htmlEditor.value = ""; // Clear editor if no content
+                    // Only clear page name input if it's the default 'index' being loaded
+                    if (pageName === 'index') {
+                        pageNameInput.value = "";
+                    } else {
+                        pageNameInput.value = pageName;
+                    }
                 }
             } catch (e) {
                 console.error("Error loading HTML into editor:", e);
                 htmlEditor.value = ""; // Clear editor on error
+                pageNameInput.value = ""; // Clear page name input on error
             }
         }
 
@@ -124,10 +152,6 @@
                 currentUserId = user.uid;
                 console.log("Authenticated as:", currentUserId);
                 // After authentication, check if we need to load a page or show the editor
-                // If in editor mode (no hash), load the user's saved content
-                if (!window.location.hash) {
-                    loadHtmlIntoEditor(currentUserId);
-                }
                 checkUrlHashAndLoadPage();
             } else {
                 // Not signed in, sign in anonymously
@@ -137,22 +161,34 @@
             }
         });
 
-        // Function to save HTML
+        // Event listener for the Save Page button
         saveButton.addEventListener('click', async () => {
             if (!currentUserId) {
                 alert("Please wait for authentication to complete.");
                 return;
             }
             const htmlContent = htmlEditor.value;
-            const userId = currentUserId; // Use the authenticated user's UID
+            // Get the page name from the input, default to 'index' if empty
+            // Sanitize the page name: convert to lowercase and replace spaces with hyphens
+            const pageName = pageNameInput.value.trim().toLowerCase().replace(/\s+/g, '-') || 'index';
+
+            // Basic validation for page name
+            if (!pageName.match(/^[a-z0-9_.-]+(\/[a-z0-9_.-]+)*$/)) {
+                alert("Page name can only contain lowercase letters, numbers, underscores, hyphens, and periods (e.g., 'index.html', 'my-page', 'blog/post-1').");
+                return;
+            }
 
             try {
-                await setDoc(doc(db, "pages", userId), {
+                // Define the document reference for the specific page within the user's subcollection
+                const docRef = doc(db, "pages", currentUserId, "userPages", pageName);
+                await setDoc(docRef, {
                     html: htmlContent,
                     timestamp: new Date()
                 });
-                alert("Page saved successfully!");
-                const pageUrl = window.location.origin + window.location.pathname + "#" + userId;
+                alert(`Page '${pageName}' saved successfully!`);
+
+                // Construct the shareable URL
+                const pageUrl = `${window.location.origin}${window.location.pathname}#${currentUserId}/${pageName}`;
                 shareLink.href = pageUrl;
                 shareLink.textContent = pageUrl;
                 shareLinkContainer.classList.remove('hidden');
@@ -162,10 +198,32 @@
             }
         });
 
-        // Function to load HTML for viewing a page
-        async function loadPage(userId) {
+        // Event listener for the View Current Page button
+        viewPageButton.addEventListener('click', () => {
+            if (!currentUserId) {
+                alert("Please wait for authentication to complete.");
+                return;
+            }
+            const pageName = pageNameInput.value.trim().toLowerCase().replace(/\s+/g, '-') || 'index';
+
+            if (!pageName.match(/^[a-z0-9_.-]+(\/[a-z0-9_.-]+)*$/)) {
+                alert("Page name can only contain lowercase letters, numbers, underscores, hyphens, and periods.");
+                return;
+            }
+
+            const pageUrl = `${window.location.origin}${window.location.pathname}#${currentUserId}/${pageName}`;
+            window.open(pageUrl, '_blank'); // Open in a new tab
+        });
+
+        /**
+         * Loads and displays the HTML content for a given user ID and page name.
+         * @param {string} userId - The UID of the user whose page is to be loaded.
+         * @param {string} pageName - The name of the page to load.
+         */
+        async function loadPage(userId, pageName) {
             try {
-                const docRef = doc(db, "pages", userId);
+                // Construct the document reference to the specific page within the user's subcollection
+                const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
@@ -175,7 +233,7 @@
                     body.classList.add('full-page-viewer'); // Add class to body for full page styling
                 } else {
                     // If no page found, show a simple message
-                    body.innerHTML = "<p style='text-align: center; margin-top: 50px;'>No page found for this ID.</p>";
+                    body.innerHTML = `<p style='text-align: center; margin-top: 50px;'>No page found for user ID '${userId}' and page name '${pageName}'.</p>`;
                     body.classList.add('full-page-viewer'); // Maintain full page viewer style
                 }
             } catch (e) {
@@ -185,19 +243,36 @@
             }
         }
 
-        // Check URL hash for user ID and load page or show editor
+        /**
+         * Checks the URL hash for user ID and page name, then loads the page or shows the editor.
+         */
         function checkUrlHashAndLoadPage() {
             const hash = window.location.hash.substring(1); // Get hash without '#'
             if (hash) {
-                // If a hash exists, hide the editor and load the page for viewing
-                editorContainer.classList.add('hidden');
-                loadPage(hash);
+                // Split the hash into userId and potential pageName (e.g., "user123/index.html")
+                const hashParts = hash.split('/');
+                const userIdFromHash = hashParts[0];
+                // Default to 'index' if no page name is specified in the hash
+                const pageNameFromHash = hashParts[1] || 'index';
+
+                if (userIdFromHash) {
+                    // If a user ID is found in the hash, hide the editor and load the specified page
+                    editorContainer.classList.add('hidden');
+                    loadPage(userIdFromHash, pageNameFromHash);
+                } else {
+                    // If hash is present but malformed, show editor
+                    editorContainer.classList.remove('hidden');
+                    body.classList.remove('full-page-viewer'); // Remove full page viewer style
+                    if (currentUserId) { // Only attempt to load if authenticated
+                        loadHtmlIntoEditor(currentUserId);
+                    }
+                }
             } else {
-                // If no hash, show the editor and load previously saved HTML
+                // If no hash, show the editor and load the current user's default 'index' page
                 editorContainer.classList.remove('hidden');
                 body.classList.remove('full-page-viewer'); // Remove full page viewer style
                 if (currentUserId) { // Only attempt to load if authenticated
-                    loadHtmlIntoEditor(currentUserId);
+                    loadHtmlIntoEditor(currentUserId); // Load default 'index' page
                 }
             }
         }
