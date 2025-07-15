@@ -3,454 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Personal Page Creator</title>
+    <title>Pages Unavailable</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f4f4f4;
-            color: #333;
-        }
-        .container {
-            max-width: 1200px; /* Increased max-width for better layout */
-            margin: 0 auto;
-            background-color: #fff;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex; /* Use flexbox for main layout */
-            flex-wrap: wrap; /* Allow wrapping on smaller screens */
-            gap: 20px; /* Space between sections */
-        }
-        h1, h2 {
-            color: #0056b3;
-            border-bottom: 2px solid #eee;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        #auth-status {
-            background-color: #e9e9e9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-bottom: 20px;
+            font-family: 'Montserrat', sans-serif;
             display: flex;
-            justify-content: space-between;
+            justify-content: center;
             align-items: center;
-            width: 100%; /* Occupy full width */
-        }
-        #auth-status p {
+            min-height: 100vh;
             margin: 0;
-            font-weight: bold;
-        }
-        button {
-            padding: 10px 18px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.2s ease;
-        }
-        #login-signup-button {
-            background-color: #007bff;
-            color: white;
-        }
-        #login-signup-button:hover {
-            background-color: #0056b3;
-        }
-        #logout-button {
-            background-color: #dc3545;
-            color: white;
-            display: none;
-        }
-        #logout-button:hover {
-            background-color: #c82333;
-        }
-        .section {
-            flex: 1; /* Each section takes equal width */
-            min-width: 400px; /* Minimum width for sections before wrapping */
-            background-color: #fdfdfd;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 1px 5px rgba(0,0,0,0.05);
-            display: none; /* Hidden by default until authenticated */
-        }
-        #editor-section {
-            border: 1px solid #cceeff;
-        }
-        #viewer-section {
-            border: 1px solid #ccffcc;
-        }
-        textarea {
-            width: 100%;
-            height: 400px; /* Increased height for more editing space */
-            padding: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-family: 'Courier New', Courier, monospace;
-            font-size: 14px;
-            resize: vertical;
-            box-sizing: border-box;
-            margin-bottom: 15px;
-            background-color: #fdfdfd;
-        }
-        #save-button {
-            background-color: #28a745;
-            color: white;
-            margin-right: 10px;
-        }
-        #save-button:hover {
-            background-color: #218838;
-        }
-        #page-link {
-            font-size: 1em;
-            color: #007bff;
-            text-decoration: none;
-            margin-left: 10px;
-            word-break: break-all; /* Ensures long links break */
-        }
-        #page-link:hover {
-            text-decoration: underline;
-        }
-        .message {
-            margin-top: 15px;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-        }
-        .message.success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-        .message.error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-        #page-display {
-            border: 1px solid #e0e0e0;
-            padding: 20px;
-            min-height: 400px; /* Match editor height */
-            background-color: #fff;
-            border-radius: 5px;
-            overflow: auto;
-            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
-        }
-        #page-display p {
-            color: #666;
+            background: linear-gradient(135deg, #f06, #4a90e2);
+            color: #fff;
             text-align: center;
-            font-style: italic;
-            margin-top: 100px; /* Center placeholder vertically */
+            overflow: hidden;
         }
-        #auth-modal {
-            display: none; /* Hidden by default */
-            position: fixed;
-            z-index: 1;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.4);
-            padding-top: 60px;
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 50px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-out;
+            position: relative;
+            overflow: hidden;
         }
-        .modal-content {
-            background-color: #fefefe;
-            margin: 5% auto;
-            padding: 25px;
-            border: 1px solid #888;
-            width: 80%;
-            max-width: 400px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            text-align: center;
+
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: rotateBackground 20s linear infinite;
+            z-index: -1;
         }
-        .close-button {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
-        .close-button:hover,
-        .close-button:focus {
-            color: black;
-            text-decoration: none;
-            cursor: pointer;
+
+        p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            opacity: 0.9;
         }
-        .modal-content input {
-            width: calc(100% - 20px);
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
-        .modal-content button {
-            width: 100%;
-            padding: 10px;
-            margin-top: 10px;
+
+        @keyframes rotateBackground {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
         }
-        #auth-error-message {
-            color: #dc3545;
-            margin-top: 10px;
-            font-weight: bold;
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px;
+                margin: 20px;
+            }
+            h1 {
+                font-size: 2.2em;
+            }
+            p {
+                font-size: 1em;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Your Personalized Web Page</h1>
-
-        <div id="auth-status">
-            <p id="auth-message">Please log in to manage your page.</p>
-            <div>
-                <button id="login-signup-button">Sign In / Sign Up</button>
-                <button id="logout-button">Log Out</button>
-            </div>
-        </div>
-
-        <div id="editor-section" class="section">
-            <h2>Edit Your Page Content</h2>
-            <textarea id="html-editor" placeholder="Enter your HTML code here. This will be your custom page content."></textarea>
-            <button id="save-button">Save Page</button>
-            <span id="save-message" class="message"></span>
-            <p>Your unique page link: <a id="page-link" href="#" target="_blank"></a></p>
-        </div>
-
-        <div id="viewer-section" class="section">
-            <h2>Your Custom Page Preview</h2>
-            <div id="page-display">
-                <p>Log in and save your page to see its content here.</p>
-            </div>
-        </div>
+        <h1>Sorry, pages aren't available right now</h1>
+        <p>We're experiencing some technical difficulties. Please try again later!</p>
     </div>
-
-    <div id="auth-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <h2>Sign In or Sign Up</h2>
-            <input type="email" id="auth-email" placeholder="Email" required>
-            <input type="password" id="auth-password" placeholder="Password" required>
-            <button id="sign-in-modal-button">Sign In</button>
-            <button id="sign-up-modal-button">Sign Up</button>
-            <p id="auth-error-message" class="message error"></p>
-        </div>
-    </div>
-
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-        // import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js'; // For XSS protection
-
-        // Your Firebase configuration
-        const firebaseConfig = {
-            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
-            authDomain: "noteshare-c6815.firebaseapp.com",
-            projectId: "noteshare-c6815",
-            storageBucket: "noteshare-c6815.firebasestorage.app",
-            messagingSenderId: "193971626161",
-            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
-            measurementId: "G-5YWVLKRVRT"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-
-        // Get references to HTML elements
-        const authMessage = document.getElementById('auth-message');
-        const loginSignupButton = document.getElementById('login-signup-button');
-        const logoutButton = document.getElementById('logout-button');
-        const editorSection = document.getElementById('editor-section');
-        const viewerSection = document.getElementById('viewer-section');
-        const htmlEditor = document.getElementById('html-editor');
-        const saveButton = document.getElementById('save-button');
-        const saveMessage = document.getElementById('save-message');
-        const pageDisplay = document.getElementById('page-display');
-        const pageLink = document.getElementById('page-link');
-
-        // Auth Modal elements
-        const authModal = document.getElementById('auth-modal');
-        const closeButton = document.querySelector('.close-button');
-        const authEmailInput = document.getElementById('auth-email');
-        const authPasswordInput = document.getElementById('auth-password');
-        const signInModalButton = document.getElementById('sign-in-modal-button');
-        const signUpModalButton = document.getElementById('sign-up-modal-button');
-        const authErrorMessage = document.getElementById('auth-error-message');
-
-        let currentUser = null; // To store the logged-in user object
-
-        // --- Auth Modal Logic ---
-        loginSignupButton.addEventListener('click', () => {
-            authModal.style.display = 'block';
-            authErrorMessage.textContent = ''; // Clear previous errors
-            authEmailInput.value = ''; // Clear inputs
-            authPasswordInput.value = '';
-        });
-
-        closeButton.addEventListener('click', () => {
-            authModal.style.display = 'none';
-        });
-
-        window.addEventListener('click', (event) => {
-            if (event.target == authModal) {
-                authModal.style.display = 'none';
-            }
-        });
-
-        signInModalButton.addEventListener('click', async () => {
-            const email = authEmailInput.value;
-            const password = authPasswordInput.value;
-            if (!email || !password) {
-                authErrorMessage.textContent = 'Please enter both email and password.';
-                return;
-            }
-            try {
-                await signInWithEmailAndPassword(auth, email, password);
-                authModal.style.display = 'none'; // Close modal on successful login
-            } catch (error) {
-                console.error("Sign In failed:", error);
-                authErrorMessage.textContent = `Sign in failed: ${error.message}`;
-            }
-        });
-
-        signUpModalButton.addEventListener('click', async () => {
-            const email = authEmailInput.value;
-            const password = authPasswordInput.value;
-            if (!email || !password) {
-                authErrorMessage.textContent = 'Please enter both email and password.';
-                return;
-            }
-            if (password.length < 6) {
-                authErrorMessage.textContent = 'Password should be at least 6 characters.';
-                return;
-            }
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                authModal.style.display = 'none'; // Close modal on successful sign up
-            } catch (error) {
-                console.error("Sign Up failed:", error);
-                authErrorMessage.textContent = `Sign up failed: ${error.message}`;
-            }
-        });
-
-        logoutButton.addEventListener('click', async () => {
-            try {
-                await signOut(auth);
-            } catch (error) {
-                console.error("Logout failed:", error);
-                alert(`Logout failed: ${error.message}`);
-            }
-        });
-
-        // Monitor authentication state changes
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
-            if (user) {
-                authMessage.textContent = `Logged in as: ${user.email}`;
-                loginSignupButton.style.display = 'none';
-                logoutButton.style.display = 'inline-block';
-                editorSection.style.display = 'block';
-                viewerSection.style.display = 'block';
-
-                // Set the page link to point to the separate viewer page
-                const userPageHash = `#${user.uid}`;
-                pageLink.href = window.location.origin + window.location.pathname.replace('index.html', 'view_page.html') + userPageHash;
-                pageLink.textContent = window.location.origin + window.location.pathname.replace('index.html', 'view_page.html') + userPageHash;
-
-                await loadUserPage(user.uid);
-            } else {
-                authMessage.textContent = `Please log in to manage your page.`;
-                loginSignupButton.style.display = 'inline-block';
-                logoutButton.style.display = 'none';
-                editorSection.style.display = 'none';
-                viewerSection.style.display = 'none';
-                pageDisplay.innerHTML = '<p>Log in and save your page to see its content here.</p>';
-                htmlEditor.value = '';
-                pageLink.href = '#';
-                pageLink.textContent = '';
-                displayMessage(saveMessage, '', ''); // Clear save message
-            }
-        });
-
-        // --- Page Management Logic ---
-        saveButton.addEventListener('click', async () => {
-            if (!currentUser) {
-                displayMessage(saveMessage, 'Please log in to save your page.', 'error');
-                return;
-            }
-
-            const userHtml = htmlEditor.value;
-            const userDocRef = doc(db, "userPages", currentUser.uid);
-
-            try {
-                await setDoc(userDocRef, { htmlContent: userHtml });
-                displayMessage(saveMessage, 'Your page has been saved successfully!', 'success');
-                
-                // IMPORTANT: SANITIZE USER HTML BEFORE RENDERING IN A REAL APP!
-                // For a production app, uncomment the DOMPurify import and use:
-                // pageDisplay.innerHTML = DOMPurify.sanitize(userHtml);
-                pageDisplay.innerHTML = userHtml;
-
-            } catch (error) {
-                console.error("Error saving document:", error);
-                displayMessage(saveMessage, `Failed to save page: ${error.message}`, 'error');
-            }
-        });
-
-        async function loadUserPage(uid) {
-            const userDocRef = doc(db, "userPages", uid);
-            try {
-                const docSnap = await getDoc(userDocRef);
-                if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    htmlEditor.value = data.htmlContent;
-                    
-                    // IMPORTANT: SANITIZE USER HTML BEFORE RENDERING IN A REAL APP!
-                    // For a production app, uncomment the DOMPurify import and use:
-                    // pageDisplay.innerHTML = DOMPurify.sanitize(data.htmlContent);
-                    pageDisplay.innerHTML = data.htmlContent;
-                } else {
-                    htmlEditor.value = `<h1>Hello, ${currentUser.email.split('@')[0] || 'User'}!</h1>
-<p>This is your custom page. You can put any HTML here.</p>
-<p>Try adding a <span style="color: blue;">blue text</span> or an image:</p>
-<img src="https://via.placeholder.com/150" alt="Placeholder Image" style="border-radius: 8px;">`;
-                    pageDisplay.innerHTML = '<p>No content saved yet. Edit the HTML above and click "Save Page"!</p>';
-                }
-            } catch (error) {
-                console.error("Error getting document:", error);
-                pageDisplay.innerHTML = '<p class="error-message">Error loading your page. Please try again.</p>';
-            }
-        }
-
-        function displayMessage(element, text, type) {
-            element.textContent = text;
-            element.className = `message ${type}`;
-            if (text) {
-                element.style.display = 'block';
-                setTimeout(() => {
-                    element.textContent = '';
-                    element.className = 'message';
-                    element.style.display = 'none';
-                }, 5000);
-            } else {
-                element.style.display = 'none';
-            }
-        }
-
-        // This section is now less critical for *loading* the user's own page in index.html,
-        // as onAuthStateChanged handles it. However, if you had logic to view *other*
-        // users' pages on the main dashboard, this would be relevant.
-        window.addEventListener('load', () => {
-            const hash = window.location.hash.substring(1);
-            if (hash && !currentUser) { // If there's a hash but no user logged in
-                // This scenario means someone might have directly landed on index.html#UID
-                // but isn't authenticated. In this setup, we rely on the
-                // onAuthStateChanged to load the *current user's* page if they log in.
-                // For viewing *public* pages, the 'view_page.html' is designed.
-            }
-        });
-    </script>
 </body>
 </html>
