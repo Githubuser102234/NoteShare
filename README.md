@@ -43,7 +43,7 @@ NoteShare is a simple and clean web app that lets users **create**, **share**, a
   - Each page gets its own shareable link  
   - Manage and update your custom site anytime  
   - Perfect for quick prototypes, portfolios, or custom content!
-
+  - Try it out [here](https://githubuser102234.github.io/NoteShare/pages)
 ---
 
 ## 🛡️ Privacy & Security
