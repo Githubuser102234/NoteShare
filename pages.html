@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Personal Page Creator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        #auth-status {
+            background-color: #e9e9e9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #auth-status p {
+            margin: 0;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease;
+        }
+        #login-button {
+            background-color: #007bff;
+            color: white;
+        }
+        #login-button:hover {
+            background-color: #0056b3;
+        }
+        #logout-button {
+            background-color: #dc3545;
+            color: white;
+            display: none; /* Hidden by default */
+        }
+        #logout-button:hover {
+            background-color: #c82333;
+        }
+        #editor-container {
+            display: none; /* Hidden until logged in */
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+        textarea {
+            width: 100%;
+            height: 350px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box; /* Include padding in width */
+            margin-bottom: 15px;
+            background-color: #fdfdfd;
+        }
+        #save-button {
+            background-color: #28a745;
+            color: white;
+            margin-right: 10px;
+        }
+        #save-button:hover {
+            background-color: #218838;
+        }
+        #page-link {
+            font-size: 1em;
+            color: #007bff;
+            text-decoration: none;
+            margin-left: 10px;
+        }
+        #page-link:hover {
+            text-decoration: underline;
+        }
+        .message {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        #page-display-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #ccc;
+        }
+        #page-display {
+            border: 1px solid #e0e0e0;
+            padding: 20px;
+            min-height: 250px;
+            background-color: #fff;
+            border-radius: 5px;
+            overflow: auto; /* In case user's HTML overflows */
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        #page-display p {
+            color: #666;
+            text-align: center;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Your Personalized Web Page</h1>
+
+        <div id="auth-status">
+            <p id="auth-message">Please log in to manage your page.</p>
+            <div>
+                <button id="login-button">Sign In with Google</button>
+                <button id="logout-button">Log Out</button>
+            </div>
+        </div>
+
+        <div id="editor-container">
+            <h2>Edit Your Page Content</h2>
+            <textarea id="html-editor" placeholder="Enter your HTML code here. This will be your custom page content."></textarea>
+            <button id="save-button">Save Page</button>
+            <span id="save-message" class="message"></span>
+            <p>Your unique page link: <a id="page-link" href="#" target="_blank"></a></p>
+        </div>
+
+        <div id="page-display-section">
+            <h2>Your Custom Page Preview</h2>
+            <div id="page-display">
+                <p>Log in and save your page to see its content here.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        // import DOMPurify from 'https://cdn.jsdelivr.net/npm/dompurify@2.3.6/dist/purify.min.js'; // Uncomment for XSS protection
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebasestorage.app",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Get references to HTML elements
+        const authMessage = document.getElementById('auth-message');
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const editorContainer = document.getElementById('editor-container');
+        const htmlEditor = document.getElementById('html-editor');
+        const saveButton = document.getElementById('save-button');
+        const saveMessage = document.getElementById('save-message');
+        const pageDisplay = document.getElementById('page-display');
+        const pageLink = document.getElementById('page-link');
+
+        let currentUser = null; // To store the logged-in user object
+
+        // --- Firebase Authentication ---
+        loginButton.addEventListener('click', async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Login failed:", error);
+                if (error.code === 'auth/popup-closed-by-user') {
+                    alert("Login process cancelled. Please try again.");
+                } else {
+                    alert(`Login failed: ${error.message}`);
+                }
+            }
+        });
+
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("Logout failed:", error);
+                alert(`Logout failed: ${error.message}`);
+            }
+        });
+
+        // Monitor authentication state changes
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            if (user) {
+                authMessage.textContent = `Logged in as: ${user.displayName || user.email}`;
+                loginButton.style.display = 'none';
+                logoutButton.style.display = 'inline-block';
+                editorContainer.style.display = 'block';
+
+                // Set the page link to be specific to this user's UID (conceptual "name")
+                const userPageHash = `#${user.uid}`;
+                pageLink.href = userPageHash;
+                pageLink.textContent = window.location.origin + window.location.pathname + userPageHash;
+
+                await loadUserPage(user.uid);
+            } else {
+                authMessage.textContent = `Please log in to manage your page.`;
+                loginButton.style.display = 'inline-block';
+                logoutButton.style.display = 'none';
+                editorContainer.style.display = 'none';
+                pageDisplay.innerHTML = '<p>Log in and save your page to see its content here.</p>';
+                htmlEditor.value = ''; // Clear editor content
+                pageLink.href = '#'; // Reset link
+                pageLink.textContent = '';
+                displayMessage(saveMessage, '', ''); // Clear save message
+            }
+        });
+
+        // --- Page Management Logic ---
+
+        // Function to save user's HTML to Firestore
+        saveButton.addEventListener('click', async () => {
+            if (!currentUser) {
+                displayMessage(saveMessage, 'Please log in to save your page.', 'error');
+                return;
+            }
+
+            const userHtml = htmlEditor.value;
+            const userDocRef = doc(db, "userPages", currentUser.uid); // Document named after user's UID
+
+            try {
+                await setDoc(userDocRef, { htmlContent: userHtml });
+                displayMessage(saveMessage, 'Your page has been saved successfully!', 'success');
+                
+                // Immediately update the displayed page with the new content
+                // IMPORTANT: SANITIZE USER HTML BEFORE RENDERING IN A REAL APP!
+                // Example: pageDisplay.innerHTML = DOMPurify.sanitize(userHtml);
+                pageDisplay.innerHTML = userHtml;
+
+            } catch (error) {
+                console.error("Error saving document:", error);
+                displayMessage(saveMessage, `Failed to save page: ${error.message}`, 'error');
+            }
+        });
+
+        // Function to load user's HTML from Firestore
+        async function loadUserPage(uid) {
+            const userDocRef = doc(db, "userPages", uid);
+            try {
+                const docSnap = await getDoc(userDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    htmlEditor.value = data.htmlContent;
+                    
+                    // IMPORTANT: SANITIZE USER HTML BEFORE RENDERING IN A REAL APP!
+                    // Example: pageDisplay.innerHTML = DOMPurify.sanitize(data.htmlContent);
+                    pageDisplay.innerHTML = data.htmlContent;
+                } else {
+                    htmlEditor.value = `<h1>Hello, ${currentUser.displayName || 'User'}!</h1>
+<p>This is your custom page. You can put any HTML here.</p>
+<p>Try adding a <span style="color: blue;">blue text</span> or an image:</p>
+<img src="https://via.placeholder.com/150" alt="Placeholder Image" style="border-radius: 8px;">`;
+                    pageDisplay.innerHTML = '<p>No content saved yet. Edit the HTML above and click "Save Page"!</p>';
+                }
+            } catch (error) {
+                console.error("Error getting document:", error);
+                pageDisplay.innerHTML = '<p class="error-message">Error loading your page. Please try again.</p>';
+            }
+        }
+
+        // Helper function to display temporary messages
+        function displayMessage(element, text, type) {
+            element.textContent = text;
+            element.className = `message ${type}`;
+            if (text) {
+                element.style.display = 'block';
+                setTimeout(() => {
+                    element.textContent = '';
+                    element.className = 'message';
+                    element.style.display = 'none';
+                }, 5000); // Message disappears after 5 seconds
+            } else {
+                element.style.display = 'none';
+            }
+        }
+
+        // --- Simple Hash Routing (for showing the current user's page) ---
+        // Since each logged-in user has *one* page, the hash is primarily symbolic.
+        // If the user navigates directly to #UID, we ensure their page is loaded.
+        window.addEventListener('hashchange', () => {
+            if (currentUser && window.location.hash === `#${currentUser.uid}`) {
+                loadUserPage(currentUser.uid);
+            }
+            // If hash is something else, you'd need more complex logic
+            // e.g., to fetch other users' public pages, if that's a feature.
+        });
+
+        // Initial check on page load if user is already logged in or hash exists.
+        // onAuthStateChanged will handle the primary loading when user state changes.
+        // This is here mainly if the user directly accesses the URL with a hash for their own page
+        // AFTER a fresh page load where the auth state might not have fully resolved instantly.
+        if (auth.currentUser) {
+            loadUserPage(auth.currentUser.uid);
+        } else if (window.location.hash.length > 1) { // If there's a hash, but user isn't logged in yet
+            // Potentially redirect to login or show a "please login" message
+            // For now, onAuthStateChanged will handle user context when it resolves.
+        }
+
+    </script>
+</body>
+</html>
