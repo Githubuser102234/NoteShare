@@ -7,11 +7,11 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 20px; /* Default margin for editor view */
             background-color: #f4f4f4;
             color: #333;
         }
-        #editor-container, #viewer-container {
+        #editor-container {
             background-color: #fff;
             padding: 20px;
             border-radius: 8px;
@@ -40,15 +40,19 @@
         button:hover {
             background-color: #0056b3;
         }
-        #page-viewer {
-            border: 1px solid #ddd;
-            min-height: 200px;
-            padding: 15px;
-            background-color: #e9e9e9;
-            overflow: auto;
-        }
         .hidden {
             display: none;
+        }
+
+        /* Styles for the full-page viewer mode */
+        body.full-page-viewer {
+            margin: 0; /* Remove body margin */
+            padding: 0; /* Remove body padding */
+            background-color: #fff; /* Default background for viewed page */
+            overflow: auto; /* Ensure scrolling if content is larger than viewport */
+        }
+        body.full-page-viewer #editor-container {
+            display: none; /* Hide the editor completely */
         }
     </style>
 </head>
@@ -62,12 +66,6 @@
         <p id="share-link-container" class="hidden">
             Your page is available at: <a id="share-link" href="#" target="_blank"></a>
         </p>
-    </div>
-
-    <div id="viewer-container" class="hidden">
-        <h1>Your Page</h1>
-        <div id="page-viewer">
-            </div>
     </div>
 
     <script type="module">
@@ -96,8 +94,7 @@
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLink = document.getElementById('share-link');
         const editorContainer = document.getElementById('editor-container');
-        const viewerContainer = document.getElementById('viewer-container');
-        const pageViewer = document.getElementById('page-viewer');
+        const body = document.body; // Reference to the body element
 
         let currentUserId = null;
 
@@ -149,19 +146,18 @@
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    pageViewer.innerHTML = data.html;
-                    editorContainer.classList.add('hidden');
-                    viewerContainer.classList.remove('hidden');
+                    // Inject user's HTML directly into the body
+                    body.innerHTML = data.html;
+                    body.classList.add('full-page-viewer'); // Add class to body for full page styling
                 } else {
-                    pageViewer.innerHTML = "<p>No page found for this ID.</p>";
-                    editorContainer.classList.add('hidden'); // Hide editor if no page
-                    viewerContainer.classList.remove('hidden');
+                    // If no page found, show a simple message
+                    body.innerHTML = "<p style='text-align: center; margin-top: 50px;'>No page found for this ID.</p>";
+                    body.classList.add('full-page-viewer'); // Maintain full page viewer style
                 }
             } catch (e) {
                 console.error("Error getting document:", e);
-                pageViewer.innerHTML = "<p>Error loading page.</p>";
-                editorContainer.classList.add('hidden');
-                viewerContainer.classList.remove('hidden');
+                body.innerHTML = "<p style='text-align: center; margin-top: 50px;'>Error loading page.</p>";
+                body.classList.add('full-page-viewer');
             }
         }
 
@@ -169,18 +165,20 @@
         function checkUrlHashAndLoadPage() {
             const hash = window.location.hash.substring(1); // Get hash without '#'
             if (hash) {
+                // If a hash exists, hide the editor and load the page
+                editorContainer.classList.add('hidden');
                 loadPage(hash);
             } else {
+                // If no hash, show the editor
                 editorContainer.classList.remove('hidden');
-                viewerContainer.classList.add('hidden');
+                body.classList.remove('full-page-viewer'); // Remove full page viewer style
             }
         }
 
         // Listen for hash changes (e.g., if user types a new hash in the URL bar)
         window.addEventListener('hashchange', checkUrlHashAndLoadPage);
 
-        // Initial check when the page loads (after Firebase auth is ready)
-        // This is handled by onAuthStateChanged now.
+        // Initial check is handled by onAuthStateChanged.
     </script>
 </body>
 </html>
