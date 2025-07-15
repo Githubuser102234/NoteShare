@@ -63,6 +63,47 @@
         body.full-page-viewer #editor-container {
             display: none; /* Hide the editor completely */
         }
+
+        /* Styles for the page list */
+        #page-list-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        #page-list {
+            list-style: none;
+            padding: 0;
+        }
+        #page-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        #page-list li:last-child {
+            border-bottom: none;
+        }
+        #page-list li span {
+            flex-grow: 1;
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+        #page-list li span:hover {
+            color: #0056b3;
+        }
+        #page-list li button {
+            background-color: #dc3545; /* Red for delete */
+            margin-left: 10px;
+            padding: 5px 8px;
+            font-size: 14px;
+        }
+        #page-list li button:hover {
+            background-color: #c82333;
+        }
     </style>
 </head>
 <body>
@@ -80,9 +121,17 @@
         </p>
     </div>
 
+    <div id="page-list-container">
+        <h2>Your Pages</h2>
+        <ul id="page-list">
+            <p id="no-pages-message">No pages found. Start by creating one above!</p>
+        </ul>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        // Import collection and deleteDoc for listing and deleting
+        import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
         // Your web app's Firebase configuration
@@ -108,7 +157,10 @@
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLink = document.getElementById('share-link');
         const editorContainer = document.getElementById('editor-container');
-        const body = document.body; // Reference to the body element
+        const pageListContainer = document.getElementById('page-list-container'); // New
+        const pageList = document.getElementById('page-list'); // New
+        const noPagesMessage = document.getElementById('no-pages-message'); // New
+        const body = document.body;
 
         let currentUserId = null;
 
@@ -120,29 +172,96 @@
          */
         async function loadHtmlIntoEditor(userId, pageName = 'index') {
             try {
-                // Construct the document reference to the specific page within the user's subcollection
                 const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    htmlEditor.value = data.html; // Set the textarea value
-                    pageNameInput.value = pageName; // Set the page name input field
+                    htmlEditor.value = data.html;
+                    pageNameInput.value = pageName;
                     console.log(`Loaded HTML for page '${pageName}' into editor.`);
                 } else {
                     console.log(`No saved HTML found for user '${userId}' and page '${pageName}'.`);
-                    htmlEditor.value = ""; // Clear editor if no content
-                    // Only clear page name input if it's the default 'index' being loaded
+                    htmlEditor.value = "";
                     if (pageName === 'index') {
                         pageNameInput.value = "";
                     } else {
                         pageNameInput.value = pageName;
                     }
                 }
+                // Always refresh the page list after loading/attempting to load a page
+                // to ensure it's up-to-date with potential new pages or deletions.
+                if (currentUserId) {
+                    displayUserPages(currentUserId);
+                }
             } catch (e) {
                 console.error("Error loading HTML into editor:", e);
-                htmlEditor.value = ""; // Clear editor on error
-                pageNameInput.value = ""; // Clear page name input on error
+                htmlEditor.value = "";
+                pageNameInput.value = "";
+            }
+        }
+
+        /**
+         * Fetches and displays all pages for the current user.
+         * @param {string} userId - The UID of the authenticated user.
+         */
+        async function displayUserPages(userId) {
+            if (!userId) {
+                pageList.innerHTML = '<p>Please log in to see your pages.</p>';
+                return;
+            }
+
+            try {
+                const pagesRef = collection(db, "pages", userId, "userPages");
+                const querySnapshot = await getDocs(pagesRef);
+
+                pageList.innerHTML = ''; // Clear existing list
+                if (querySnapshot.empty) {
+                    pageList.appendChild(noPagesMessage); // Show message if no pages
+                    noPagesMessage.classList.remove('hidden');
+                } else {
+                    noPagesMessage.classList.add('hidden'); // Hide message if pages exist
+                    querySnapshot.forEach((doc) => {
+                        const pageName = doc.id;
+                        const listItem = document.createElement('li');
+
+                        const pageNameSpan = document.createElement('span');
+                        pageNameSpan.textContent = pageName;
+                        pageNameSpan.style.cursor = 'pointer';
+                        pageNameSpan.onclick = () => {
+                            // Load selected page into editor
+                            loadHtmlIntoEditor(currentUserId, pageName);
+                        };
+
+                        const deleteButton = document.createElement('button');
+                        deleteButton.textContent = 'Delete';
+                        deleteButton.onclick = async (event) => {
+                            event.stopPropagation(); // Prevent loading page when deleting
+                            if (confirm(`Are you sure you want to delete the page "${pageName}"?`)) {
+                                try {
+                                    await deleteDoc(doc(db, "pages", currentUserId, "userPages", pageName));
+                                    alert(`Page "${pageName}" deleted successfully!`);
+                                    // If the deleted page was currently in the editor, clear it
+                                    if (pageNameInput.value === pageName) {
+                                        htmlEditor.value = '';
+                                        pageNameInput.value = '';
+                                    }
+                                    displayUserPages(currentUserId); // Refresh the list
+                                } catch (e) {
+                                    console.error("Error deleting page:", e);
+                                    alert(`Error deleting page "${pageName}".`);
+                                }
+                            }
+                        };
+
+                        listItem.appendChild(pageNameSpan);
+                        listItem.appendChild(deleteButton);
+                        pageList.appendChild(listItem);
+                    });
+                }
+            } catch (e) {
+                console.error("Error fetching user pages:", e);
+                pageList.innerHTML = '<p>Error loading your pages.</p>';
             }
         }
 
@@ -151,12 +270,12 @@
             if (user) {
                 currentUserId = user.uid;
                 console.log("Authenticated as:", currentUserId);
-                // After authentication, check if we need to load a page or show the editor
                 checkUrlHashAndLoadPage();
+                displayUserPages(currentUserId); // Display pages immediately after authentication
             } else {
-                // Not signed in, sign in anonymously
                 signInAnonymously(auth).catch((error) => {
                     console.error("Error signing in anonymously:", error);
+                    pageList.innerHTML = '<p>Please enable third-party cookies or sign in to manage your pages.</p>';
                 });
             }
         });
@@ -168,18 +287,14 @@
                 return;
             }
             const htmlContent = htmlEditor.value;
-            // Get the page name from the input, default to 'index' if empty
-            // Sanitize the page name: convert to lowercase and replace spaces with hyphens
             const pageName = pageNameInput.value.trim().toLowerCase().replace(/\s+/g, '-') || 'index';
 
-            // Basic validation for page name
             if (!pageName.match(/^[a-z0-9_.-]+(\/[a-z0-9_.-]+)*$/)) {
                 alert("Page name can only contain lowercase letters, numbers, underscores, hyphens, and periods (e.g., 'index.html', 'my-page', 'blog/post-1').");
                 return;
             }
 
             try {
-                // Define the document reference for the specific page within the user's subcollection
                 const docRef = doc(db, "pages", currentUserId, "userPages", pageName);
                 await setDoc(docRef, {
                     html: htmlContent,
@@ -187,11 +302,12 @@
                 });
                 alert(`Page '${pageName}' saved successfully!`);
 
-                // Construct the shareable URL
                 const pageUrl = `${window.location.origin}${window.location.pathname}#${currentUserId}/${pageName}`;
                 shareLink.href = pageUrl;
                 shareLink.textContent = pageUrl;
                 shareLinkContainer.classList.remove('hidden');
+
+                displayUserPages(currentUserId); // Refresh the page list after saving
             } catch (e) {
                 console.error("Error saving document: ", e);
                 alert("Error saving page. Please try again.");
@@ -212,7 +328,7 @@
             }
 
             const pageUrl = `${window.location.origin}${window.location.pathname}#${currentUserId}/${pageName}`;
-            window.open(pageUrl, '_blank'); // Open in a new tab
+            window.open(pageUrl, '_blank');
         });
 
         /**
@@ -222,19 +338,16 @@
          */
         async function loadPage(userId, pageName) {
             try {
-                // Construct the document reference to the specific page within the user's subcollection
                 const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
-                    // Inject user's HTML directly into the body
                     body.innerHTML = data.html;
-                    body.classList.add('full-page-viewer'); // Add class to body for full page styling
+                    body.classList.add('full-page-viewer');
                 } else {
-                    // If no page found, show a simple message
                     body.innerHTML = `<p style='text-align: center; margin-top: 50px;'>No page found for user ID '${userId}' and page name '${pageName}'.</p>`;
-                    body.classList.add('full-page-viewer'); // Maintain full page viewer style
+                    body.classList.add('full-page-viewer');
                 }
             } catch (e) {
                 console.error("Error getting document:", e);
@@ -247,40 +360,33 @@
          * Checks the URL hash for user ID and page name, then loads the page or shows the editor.
          */
         function checkUrlHashAndLoadPage() {
-            const hash = window.location.hash.substring(1); // Get hash without '#'
+            const hash = window.location.hash.substring(1);
             if (hash) {
-                // Split the hash into userId and potential pageName (e.g., "user123/index.html")
                 const hashParts = hash.split('/');
                 const userIdFromHash = hashParts[0];
-                // Default to 'index' if no page name is specified in the hash
                 const pageNameFromHash = hashParts[1] || 'index';
 
                 if (userIdFromHash) {
-                    // If a user ID is found in the hash, hide the editor and load the specified page
                     editorContainer.classList.add('hidden');
+                    pageListContainer.classList.add('hidden'); // Hide page list in viewer mode
                     loadPage(userIdFromHash, pageNameFromHash);
                 } else {
-                    // If hash is present but malformed, show editor
                     editorContainer.classList.remove('hidden');
-                    body.classList.remove('full-page-viewer'); // Remove full page viewer style
-                    if (currentUserId) { // Only attempt to load if authenticated
+                    pageListContainer.classList.remove('hidden'); // Show page list in editor mode
+                    if (currentUserId) {
                         loadHtmlIntoEditor(currentUserId);
                     }
                 }
             } else {
-                // If no hash, show the editor and load the current user's default 'index' page
                 editorContainer.classList.remove('hidden');
-                body.classList.remove('full-page-viewer'); // Remove full page viewer style
-                if (currentUserId) { // Only attempt to load if authenticated
-                    loadHtmlIntoEditor(currentUserId); // Load default 'index' page
+                pageListContainer.classList.remove('hidden'); // Show page list in editor mode
+                if (currentUserId) {
+                    loadHtmlIntoEditor(currentUserId);
                 }
             }
         }
 
-        // Listen for hash changes (e.g., if user types a new hash in the URL bar)
         window.addEventListener('hashchange', checkUrlHashAndLoadPage);
-
-        // Initial check is handled by onAuthStateChanged, which ensures currentUserId is set before checking the hash.
     </script>
 </body>
 </html>
