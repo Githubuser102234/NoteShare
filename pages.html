@@ -130,7 +130,6 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        // Import collection and deleteDoc for listing and deleting
         import { getFirestore, doc, setDoc, getDoc, collection, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
@@ -147,7 +146,7 @@
 
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const db = getFirestore(app); // db instance is directly available after init
         const auth = getAuth(app);
 
         const htmlEditor = document.getElementById('html-editor');
@@ -157,9 +156,9 @@
         const shareLinkContainer = document.getElementById('share-link-container');
         const shareLink = document.getElementById('share-link');
         const editorContainer = document.getElementById('editor-container');
-        const pageListContainer = document.getElementById('page-list-container'); // New
-        const pageList = document.getElementById('page-list'); // New
-        const noPagesMessage = document.getElementById('no-pages-message'); // New
+        const pageListContainer = document.getElementById('page-list-container');
+        const pageList = document.getElementById('page-list');
+        const noPagesMessage = document.getElementById('no-pages-message');
         const body = document.body;
 
         let currentUserId = null;
@@ -171,6 +170,10 @@
          * @param {string} [pageName='index'] - The name of the page to load.
          */
         async function loadHtmlIntoEditor(userId, pageName = 'index') {
+            if (!db) {
+                console.warn("Firestore (db) not initialized when attempting to load HTML.");
+                return;
+            }
             try {
                 const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
@@ -189,8 +192,6 @@
                         pageNameInput.value = pageName;
                     }
                 }
-                // Always refresh the page list after loading/attempting to load a page
-                // to ensure it's up-to-date with potential new pages or deletions.
                 if (currentUserId) {
                     displayUserPages(currentUserId);
                 }
@@ -210,6 +211,11 @@
                 pageList.innerHTML = '<p>Please log in to see your pages.</p>';
                 return;
             }
+            if (!db) {
+                console.warn("Firestore (db) not initialized when attempting to display user pages.");
+                pageList.innerHTML = '<p>Error: Database not ready.</p>';
+                return;
+            }
 
             try {
                 const pagesRef = collection(db, "pages", userId, "userPages");
@@ -217,39 +223,52 @@
 
                 pageList.innerHTML = ''; // Clear existing list
                 if (querySnapshot.empty) {
-                    pageList.appendChild(noPagesMessage); // Show message if no pages
                     noPagesMessage.classList.remove('hidden');
+                    pageList.appendChild(noPagesMessage);
                 } else {
-                    noPagesMessage.classList.add('hidden'); // Hide message if pages exist
-                    querySnapshot.forEach((doc) => {
-                        const pageName = doc.id;
+                    noPagesMessage.classList.add('hidden');
+                    querySnapshot.forEach((docSnap) => { // Renamed 'doc' to 'docSnap' to avoid conflict with Firestore's doc() function
+                        const pageName = docSnap.id; // Use docSnap.id to get the document ID (page name)
                         const listItem = document.createElement('li');
 
                         const pageNameSpan = document.createElement('span');
                         pageNameSpan.textContent = pageName;
                         pageNameSpan.style.cursor = 'pointer';
                         pageNameSpan.onclick = () => {
-                            // Load selected page into editor
                             loadHtmlIntoEditor(currentUserId, pageName);
                         };
 
                         const deleteButton = document.createElement('button');
                         deleteButton.textContent = 'Delete';
                         deleteButton.onclick = async (event) => {
-                            event.stopPropagation(); // Prevent loading page when deleting
-                            if (confirm(`Are you sure you want to delete the page "${pageName}"?`)) {
+                            event.stopPropagation();
+                            if (!currentUserId || !db) { // Additional check before attempting delete
+                                console.error("Cannot delete: currentUserId or db is not available.");
+                                alert("Cannot delete page: Authentication or database connection not ready.");
+                                return;
+                            }
+                            if (confirm(`Are you sure you want to delete the page "${pageName}"? This action cannot be undone.`)) {
                                 try {
-                                    await deleteDoc(doc(db, "pages", currentUserId, "userPages", pageName));
+                                    // ADDED DEBUGGING LOGS HERE
+                                    console.log("Attempting to delete page:");
+                                    console.log("  db instance (should not be null/undefined):", db);
+                                    console.log("  currentUserId (should not be null/undefined):", currentUserId);
+                                    console.log("  pageName (to delete):", pageName);
+
+                                    const docRefToDelete = doc(db, "pages", currentUserId, "userPages", pageName);
+                                    console.log("  Generated Document Reference:", docRefToDelete); // Check if this is a valid object
+
+                                    await deleteDoc(docRefToDelete);
                                     alert(`Page "${pageName}" deleted successfully!`);
-                                    // If the deleted page was currently in the editor, clear it
                                     if (pageNameInput.value === pageName) {
                                         htmlEditor.value = '';
                                         pageNameInput.value = '';
                                     }
-                                    displayUserPages(currentUserId); // Refresh the list
+                                    displayUserPages(currentUserId);
                                 } catch (e) {
                                     console.error("Error deleting page:", e);
-                                    alert(`Error deleting page "${pageName}".`);
+                                    console.error("Full error object for delete:", e); // Get full error details
+                                    alert(`Error deleting page "${pageName}". Please check the console for details.`);
                                 }
                             }
                         };
@@ -271,19 +290,21 @@
                 currentUserId = user.uid;
                 console.log("Authenticated as:", currentUserId);
                 checkUrlHashAndLoadPage();
-                displayUserPages(currentUserId); // Display pages immediately after authentication
+                displayUserPages(currentUserId);
             } else {
                 signInAnonymously(auth).catch((error) => {
                     console.error("Error signing in anonymously:", error);
                     pageList.innerHTML = '<p>Please enable third-party cookies or sign in to manage your pages.</p>';
+                    // Ensure editor is hidden and user knows they can't edit without auth
+                    editorContainer.classList.add('hidden');
                 });
             }
         });
 
         // Event listener for the Save Page button
         saveButton.addEventListener('click', async () => {
-            if (!currentUserId) {
-                alert("Please wait for authentication to complete.");
+            if (!currentUserId || !db) { // Added db check
+                alert("Please wait for authentication and database connection to complete.");
                 return;
             }
             const htmlContent = htmlEditor.value;
@@ -307,7 +328,7 @@
                 shareLink.textContent = pageUrl;
                 shareLinkContainer.classList.remove('hidden');
 
-                displayUserPages(currentUserId); // Refresh the page list after saving
+                displayUserPages(currentUserId);
             } catch (e) {
                 console.error("Error saving document: ", e);
                 alert("Error saving page. Please try again.");
@@ -337,6 +358,12 @@
          * @param {string} pageName - The name of the page to load.
          */
         async function loadPage(userId, pageName) {
+            if (!db) {
+                console.warn("Firestore (db) not initialized when attempting to load page for viewing.");
+                body.innerHTML = "<p style='text-align: center; margin-top: 50px;'>Error: Database not ready.</p>";
+                body.classList.add('full-page-viewer');
+                return;
+            }
             try {
                 const docRef = doc(db, "pages", userId, "userPages", pageName);
                 const docSnap = await getDoc(docRef);
@@ -368,18 +395,18 @@
 
                 if (userIdFromHash) {
                     editorContainer.classList.add('hidden');
-                    pageListContainer.classList.add('hidden'); // Hide page list in viewer mode
+                    pageListContainer.classList.add('hidden');
                     loadPage(userIdFromHash, pageNameFromHash);
                 } else {
                     editorContainer.classList.remove('hidden');
-                    pageListContainer.classList.remove('hidden'); // Show page list in editor mode
+                    pageListContainer.classList.remove('hidden');
                     if (currentUserId) {
                         loadHtmlIntoEditor(currentUserId);
                     }
                 }
             } else {
                 editorContainer.classList.remove('hidden');
-                pageListContainer.classList.remove('hidden'); // Show page list in editor mode
+                pageListContainer.classList.remove('hidden');
                 if (currentUserId) {
                     loadHtmlIntoEditor(currentUserId);
                 }
