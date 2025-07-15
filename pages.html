@@ -354,10 +354,10 @@
                 editorSection.style.display = 'block';
                 viewerSection.style.display = 'block';
 
-                // Set the page link to be specific to this user's UID
+                // Set the page link to point to the separate viewer page
                 const userPageHash = `#${user.uid}`;
-                pageLink.href = window.location.origin + window.location.pathname + userPageHash;
-                pageLink.textContent = window.location.origin + window.location.pathname + userPageHash;
+                pageLink.href = window.location.origin + window.location.pathname.replace('index.html', 'view_page.html') + userPageHash;
+                pageLink.textContent = window.location.origin + window.location.pathname.replace('index.html', 'view_page.html') + userPageHash;
 
                 await loadUserPage(user.uid);
             } else {
@@ -439,17 +439,16 @@
             }
         }
 
-        // Handle direct access to a user's page via hash
+        // This section is now less critical for *loading* the user's own page in index.html,
+        // as onAuthStateChanged handles it. However, if you had logic to view *other*
+        // users' pages on the main dashboard, this would be relevant.
         window.addEventListener('load', () => {
-            const hash = window.location.hash.substring(1); // Get hash without the '#'
-            if (hash) {
-                // This part would be for *viewing* a public page.
-                // For this current setup, we only allow logged-in users to load *their own* page content
-                // and the hash just reflects the current user's page link.
-                // If you wanted to allow public viewing, you'd need a way to fetch
-                // content for a given UID without authentication.
-                // For now, the onAuthStateChanged handles loading the logged-in user's content.
-                // If a user is not logged in and lands on a page with a hash, they will simply see the default message.
+            const hash = window.location.hash.substring(1);
+            if (hash && !currentUser) { // If there's a hash but no user logged in
+                // This scenario means someone might have directly landed on index.html#UID
+                // but isn't authenticated. In this setup, we rely on the
+                // onAuthStateChanged to load the *current user's* page if they log in.
+                // For viewing *public* pages, the 'view_page.html' is designed.
             }
         });
     </script>
