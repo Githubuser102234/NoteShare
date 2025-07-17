@@ -7,81 +7,21 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 0; /* Remove default body margin */
+            margin: 20px;
             background-color: #f4f4f4;
             color: #333;
             display: flex;
-            min-height: 100vh; /* Make body take up full viewport height */
+            justify-content: center;
+            align-items: center;
+            min-height: 90vh; /* Make body take up most of viewport height */
         }
-        .sidebar {
-            width: 250px;
-            background-color: #333;
-            color: white;
-            padding: 20px;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        .sidebar h2 {
-            color: #d9534f;
-            margin-top: 0;
-            margin-bottom: 15px;
-        }
-        .sidebar ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        .sidebar ul li {
-            margin-bottom: 10px;
-        }
-        .sidebar ul li button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 1em;
-            padding: 5px 0;
-            text-align: left;
+        .container {
+            max-width: 900px;
             width: 100%;
-        }
-        .sidebar ul li button:hover {
-            text-decoration: underline;
-        }
-        .sidebar input[type="text"] {
-            width: calc(100% - 22px);
-            padding: 8px;
-            margin-bottom: 10px;
-            border: 1px solid #555;
-            border-radius: 4px;
-            background-color: #444;
-            color: white;
-        }
-        .sidebar button {
-            padding: 8px 12px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.9em;
-            margin-right: 5px;
-        }
-        .sidebar button:hover {
-            background-color: #0056b3;
-        }
-        .sidebar .unban-button {
-            background-color: #28a745;
-        }
-        .sidebar .unban-button:hover {
-            background-color: #218838;
-        }
-
-        .main-content {
-            flex-grow: 1;
+            background-color: #fff;
             padding: 20px;
-            max-width: calc(100% - 250px); /* Adjust based on sidebar width */
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         h1 {
             color: #d9534f; /* Red for administrative interface */
@@ -127,7 +67,6 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 1em;
-            margin-right: 10px;
         }
         .report-item .action-buttons button:hover {
             background-color: #c82333;
@@ -160,48 +99,19 @@
             color: #555;
             font-size: 1.2em;
         }
-        #admin-actions-status {
-            margin-top: 15px;
-        }
     </style>
 </head>
 <body>
-    <div class="sidebar" id="sidebar">
-        <h2>Admin Panel</h2>
-        <p>Logged in as: <span id="admin-email"></span></p>
-        <button onclick="logoutAdmin()">Log Out</button>
-
-        <h3>Ban User</h3>
-        <input type="text" id="ban-user-id" placeholder="Enter User ID">
-        <button onclick="banUser()">Ban</button>
-        <button class="unban-button" onclick="unbanUser()">Unban</button>
-        <div id="ban-status" class="status-message"></div>
-
-        <h3>Banned Users</h3>
-        <ul id="banned-users-list">
-            <li>Loading...</li>
-        </ul>
-        <div id="banned-list-status" class="status-message"></div>
-    </div>
-
-    <div class="main-content" id="main-content">
+    <div class="container" id="main-container">
         <div id="loading-message">
             <p>Checking authorization...</p>
-        </div>
-        <div id="report-viewer-content" class="hidden">
-            <h1>TextShare Report Viewer (Admin)</h1>
-            <h2>Recent Reports</h2>
-            <div id="reports-list">
-                <p>Loading reports...</p>
-            </div>
-            <div id="action-status" class="status-message"></div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, doc, deleteDoc, updateDoc, getDoc, query, where } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
@@ -220,34 +130,29 @@
         // IMPORTANT: Replace this with the ACTUAL UID(s) of your admin user(s) from Firebase Authentication
         const ADMIN_UIDS = ['0AtVchWcD4MZ4yUHkVnYLn2nQG62']; // e.g., ['abcdef1234567890', 'anotherAdminUid']
 
-        const sidebar = document.getElementById('sidebar');
-        const mainContent = document.getElementById('main-content');
-        const loadingMessage = document.getElementById('loading-message');
-        const reportViewerContent = document.getElementById('report-viewer-content');
-        const adminEmailSpan = document.getElementById('admin-email');
-        const reportsListDiv = document.getElementById('reports-list');
-        const actionStatusDiv = document.getElementById('action-status');
-        const banUserIdInput = document.getElementById('ban-user-id');
-        const banStatusDiv = document.getElementById('ban-status');
-        const bannedUsersList = document.getElementById('banned-users-list');
-        const bannedListStatusDiv = document.getElementById('banned-list-status');
+        const mainContainer = document.getElementById('main-container');
 
         // Function to display the actual report viewer content
-        function showAdminUI(email) {
-            loadingMessage.classList.add('hidden');
-            reportViewerContent.classList.remove('hidden');
-            sidebar.classList.remove('hidden'); // Ensure sidebar is visible
-            adminEmailSpan.textContent = email;
-            loadReports();
-            loadBannedUsers(); // Load banned users when admin UI is shown
+        function showReportViewerUI() {
+            mainContainer.innerHTML = `
+                <h1>TextShare Report Viewer (Admin)</h1>
+                <p style="text-align: center; font-style: italic;">Logged in as: ${auth.currentUser.email}</p>
+                <h2>Recent Reports</h2>
+                <div id="reports-list">
+                    <p>Loading reports...</p>
+                </div>
+                <div id="action-status" class="status-message"></div>
+                <button onclick="logoutAdmin()">Log Out</button>
+            `;
+            // Re-get element references after innerHTML is updated
+            const reportsListDiv = document.getElementById('reports-list');
+            const actionStatusDiv = document.getElementById('action-status');
+            loadReports(reportsListDiv, actionStatusDiv); // Pass elements to the function
         }
 
         // Function to display the blank page message
         function showBlankPage() {
-            loadingMessage.classList.add('hidden');
-            reportViewerContent.classList.add('hidden');
-            sidebar.classList.add('hidden'); // Hide sidebar if not authorized
-            mainContent.innerHTML = `
+            mainContainer.innerHTML = `
                 <div id="blank-page-content">
                     <p>Access Denied.</p>
                     <p>You do not have permission to view this page.</p>
@@ -276,7 +181,7 @@
         onAuthStateChanged(auth, (user) => {
             if (user && ADMIN_UIDS.includes(user.uid)) {
                 // User is logged in AND is an admin
-                showAdminUI(user.email);
+                showReportViewerUI();
             } else {
                 // User is not logged in OR is not an admin
                 showBlankPage();
@@ -294,7 +199,7 @@
             }
         };
 
-        async function loadReports() {
+        async function loadReports(reportsListDiv, actionStatusDiv) {
             reportsListDiv.innerHTML = '<p>Loading reports...</p>';
             actionStatusDiv.textContent = ''; // Clear previous status
 
@@ -308,30 +213,11 @@
                     return;
                 }
 
-                querySnapshot.forEach(async (docSnap) => {
-                    const reportData = docSnap.data();
-                    const reportId = docSnap.id;
+                querySnapshot.forEach((doc) => {
+                    const reportData = doc.data();
+                    const reportId = doc.id;
                     const timestamp = reportData.timestamp ? reportData.timestamp.toDate() : new Date();
                     const formattedDate = timestamp.toLocaleString();
-
-                    // Extract the textId from the reportedLink
-                    const textId = extractTextIdFromLink(encodeURIComponent(reportData.reportedLink));
-                    let reportedUserEmail = 'N/A';
-                    let reportedUserUid = 'N/A';
-
-                    if (textId) {
-                        const textDocRef = doc(db, "texts", textId);
-                        const textDocSnap = await getDoc(textDocRef);
-                        if (textDocSnap.exists()) {
-                            const textOwnerId = textDocSnap.data().userId;
-                            reportedUserUid = textOwnerId;
-                            const userDocRef = doc(db, "users", textOwnerId);
-                            const userDocSnap = await getDoc(userDocRef);
-                            if (userDocSnap.exists()) {
-                                reportedUserEmail = userDocSnap.data().email || 'Email not found';
-                            }
-                        }
-                    }
 
                     const reportItem = document.createElement('div');
                     reportItem.className = 'report-item';
@@ -340,14 +226,11 @@
                     reportItem.innerHTML = `
                         <div class="meta-info">Report ID: <strong>${reportId}</strong> | Reported at: <strong>${formattedDate}</strong></div>
                         <p><strong>Reported Link:</strong> <a href="${reportData.reportedLink}" target="_blank">${reportData.reportedLink}</a></p>
-                        <p><strong>Reported Note Owner (UID):</strong> ${reportedUserUid}</p>
-                        <p><strong>Reported Note Owner (Email):</strong> ${reportedUserEmail}</p>
                         <p><strong>Additional Info:</strong> ${reportData.additionalInfo || 'N/A'}</p>
                         <p><strong>Reporter UID:</strong> ${reportData.reporterUid || 'Anonymous'}</p>
                         <div class="action-buttons">
                             <a href="${reportData.reportedLink}" target="_blank">View Reported Content</a>
-                            <button onclick="removeReportedContent('${reportId}', '${encodeURIComponent(reportData.reportedLink)}')">Delete Report & Content</button>
-                            ${reportedUserUid !== 'N/A' ? `<button onclick="banUserFromReport('${reportedUserUid}')">Ban User (${reportedUserEmail})</button>` : ''}
+                            <button onclick="removeReportedContent('${reportId}', '${encodeURIComponent(reportData.reportedLink)}', document.getElementById('reports-list'), document.getElementById('action-status'))">Remove Reported Content</button>
                         </div>
                     `;
                     reportsListDiv.appendChild(reportItem);
@@ -377,7 +260,7 @@
         }
 
         // This function will attempt to delete the report and the associated text content.
-        window.removeReportedContent = async (reportId, encodedReportedLink) => {
+        window.removeReportedContent = async (reportId, encodedReportedLink, reportsListDiv, actionStatusDiv) => {
             if (!confirm('Are you absolutely sure you want to REMOVE this report AND attempt to DELETE the reported text content? This action cannot be undone.')) {
                 return;
             }
@@ -426,123 +309,8 @@
                 }
             }
             // Reload reports to reflect changes, especially if something went wrong but the report was removed
-            loadReports();
+            loadReports(reportsListDiv, actionStatusDiv);
         };
-
-        // --- Ban System Functions ---
-
-        window.banUser = async () => {
-            const userIdToBan = banUserIdInput.value.trim();
-            if (!userIdToBan) {
-                banStatusDiv.className = 'status-message error';
-                banStatusDiv.textContent = 'Please enter a User ID to ban.';
-                return;
-            }
-
-            if (ADMIN_UIDS.includes(userIdToBan)) {
-                banStatusDiv.className = 'status-message error';
-                banStatusDiv.textContent = 'Cannot ban an admin user.';
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to BAN user with ID: ${userIdToBan}?`)) {
-                return;
-            }
-
-            banStatusDiv.textContent = 'Banning user...';
-            banStatusDiv.className = 'status-message';
-
-            try {
-                const userDocRef = doc(db, "users", userIdToBan);
-                await updateDoc(userDocRef, { banned: true });
-                banStatusDiv.className = 'status-message success';
-                banStatusDiv.textContent = `User ${userIdToBan} banned successfully.`;
-                banUserIdInput.value = '';
-                loadBannedUsers(); // Reload the list of banned users
-            } catch (error) {
-                banStatusDiv.className = 'status-message error';
-                banStatusDiv.textContent = `Error banning user: ${error.message}`;
-                console.error("Error banning user:", error);
-            }
-        };
-
-        window.unbanUser = async () => {
-            const userIdToUnban = banUserIdInput.value.trim();
-            if (!userIdToUnban) {
-                banStatusDiv.className = 'status-message error';
-                banStatusDiv.textContent = 'Please enter a User ID to unban.';
-                return;
-            }
-
-            if (!confirm(`Are you sure you want to UNBAN user with ID: ${userIdToUnban}?`)) {
-                return;
-            }
-
-            banStatusDiv.textContent = 'Unbanning user...';
-            banStatusDiv.className = 'status-message';
-
-            try {
-                const userDocRef = doc(db, "users", userIdToUnban);
-                await updateDoc(userDocRef, { banned: false });
-                banStatusDiv.className = 'status-message success';
-                banStatusDiv.textContent = `User ${userIdToUnban} unbanned successfully.`;
-                banUserIdInput.value = '';
-                loadBannedUsers(); // Reload the list of banned users
-            } catch (error) {
-                banStatusDiv.className = 'status-message error';
-                banStatusDiv.textContent = `Error unbanning user: ${error.message}`;
-                console.error("Error unbanning user:", error);
-            }
-        };
-
-        window.banUserFromReport = async (userId) => {
-            // Pre-fill the input field with the user ID from the report
-            banUserIdInput.value = userId;
-            // Directly call the ban function
-            await banUser();
-        };
-
-        async function loadBannedUsers() {
-            bannedUsersList.innerHTML = '<li>Loading banned users...</li>';
-            bannedListStatusDiv.textContent = '';
-
-            try {
-                const q = query(collection(db, "users"), where("banned", "==", true));
-                const querySnapshot = await getDocs(q);
-                bannedUsersList.innerHTML = '';
-
-                if (querySnapshot.empty) {
-                    bannedUsersList.innerHTML = '<li>No banned users found.</li>';
-                    return;
-                }
-
-                querySnapshot.forEach((docSnap) => {
-                    const userData = docSnap.data();
-                    const userId = docSnap.id;
-                    const userEmail = userData.email || 'Email Not Found';
-
-                    const listItem = document.createElement('li');
-                    listItem.innerHTML = `
-                        ${userEmail} (ID: ${userId})
-                        <button class="unban-button" onclick="unbanUserFromList('${userId}')">Unban</button>
-                    `;
-                    bannedUsersList.appendChild(listItem);
-                });
-            } catch (error) {
-                bannedUsersList.innerHTML = '<li>Error loading banned users.</li>';
-                bannedListStatusDiv.className = 'status-message error';
-                bannedListStatusDiv.textContent = `Error: ${error.message}`;
-                console.error("Error loading banned users:", error);
-            }
-        }
-
-        window.unbanUserFromList = async (userId) => {
-            // Pre-fill the input field with the user ID
-            banUserIdInput.value = userId;
-            // Directly call the unban function
-            await unbanUser();
-        };
-
     </script>
 </body>
 </html>
