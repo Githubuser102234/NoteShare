@@ -176,6 +176,16 @@
         .toggle-button.active {
             background-color: #28a745; /* Green for active/enabled */
         }
+        /* Style for banned message */
+        .banned-message {
+            background-color: #ffcccc;
+            color: #cc0000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +201,9 @@
             <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
             <button id="logout-button" class="hidden">Log Out</button>
             <div id="auth-status"></div>
+            <div id="banned-status-message" class="banned-message hidden">
+                You are currently banned and cannot post comments or create new notes.
+            </div>
         </div>
 
         <hr>
@@ -248,7 +261,7 @@
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         // Import Timestamp from Firestore to store dates correctly
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
         // Your web app's Firebase configuration
         const firebaseConfig = {
@@ -275,6 +288,7 @@
         const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
         const logoutButton = document.getElementById('logout-button');
         const authStatusDiv = document.getElementById('auth-status');
+        const bannedStatusMessage = document.getElementById('banned-status-message'); // New
         const createTextSection = document.getElementById('create-text-section');
         const sharedTextsSection = document.getElementById('shared-texts-section');
         const textTitleInput = document.getElementById('text-title');
@@ -308,6 +322,7 @@
 
         let currentUser = null; // To store the current logged-in user
         let currentViewedText = null; // To store text data for public view
+        let isUserBanned = false; // New: To store the banned status of the current user
 
         // --- Authentication Functions ---
 
@@ -316,8 +331,15 @@
             const password = passwordInput.value;
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                // Initialize user document in Firestore with banned: false
+                await setDoc(doc(db, "users", userCredential.user.uid), {
+                    email: userCredential.user.email,
+                    banned: false, // New: User is not banned by default
+                    createdAt: Timestamp.now()
+                });
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = `Successfully signed up and logged in as ${userCredential.user.email}`;
+                isUserBanned = false; // Ensure ban status is reset on signup
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error signing up: ${error.message}`;
@@ -363,6 +385,8 @@
                 displayMainUI(); // Go back to default UI state
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = 'Successfully logged out.';
+                isUserBanned = false; // Reset ban status on logout
+                bannedStatusMessage.classList.add('hidden'); // Hide banned message
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging out: ${error.message}`;
@@ -377,17 +401,24 @@
             sharedTextsSection.classList.add('hidden');
             publicTextViewSection.classList.add('hidden');
             goBackButton.classList.add('hidden');
+            bannedStatusMessage.classList.add('hidden'); // Hide banned message by default
 
             if (showPublicView) {
                 publicTextViewSection.classList.remove('hidden');
             } else if (currentUser) {
-                createTextSection.classList.remove('hidden');
-                sharedTextsSection.classList.remove('hidden');
                 document.getElementById('auth-section').classList.remove('hidden'); // Show auth section to display Logout button
                 logoutButton.classList.remove('hidden'); // Show logout button
                 signupButton.classList.add('hidden'); // Hide signup button when logged in
                 loginButton.classList.add('hidden'); // Hide login button when logged in
                 forgotPasswordButton.classList.add('hidden'); // Hide forgot password button when logged in
+
+                // Show/hide create text section based on ban status
+                if (!isUserBanned) {
+                    createTextSection.classList.remove('hidden');
+                    sharedTextsSection.classList.remove('hidden');
+                } else {
+                    bannedStatusMessage.classList.remove('hidden'); // Show banned message
+                }
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
                 logoutButton.classList.add('hidden'); // Hide logout button when logged out
@@ -401,8 +432,36 @@
 
 
         // Listen for authentication state changes
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             currentUser = user;
+            if (currentUser) {
+                // Fetch user's banned status from Firestore
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    isUserBanned = userDocSnap.data().banned || false;
+                } else {
+                    // If user document doesn't exist (e.g., old user without a 'banned' field),
+                    // create it and set banned to false.
+                    await setDoc(userDocRef, {
+                        email: currentUser.email,
+                        banned: false,
+                        createdAt: Timestamp.now()
+                    }, { merge: true }); // Use merge to avoid overwriting other fields if they exist
+                    isUserBanned = false;
+                }
+
+                // Show banned message if applicable
+                if (isUserBanned) {
+                    bannedStatusMessage.classList.remove('hidden');
+                } else {
+                    bannedStatusMessage.classList.add('hidden');
+                }
+            } else {
+                isUserBanned = false; // Reset ban status if no user
+                bannedStatusMessage.classList.add('hidden'); // Hide banned message
+            }
+
             // When auth state changes, re-evaluate UI based on hash (if any) or login status
             const hash = window.location.hash;
             if (hash && hash.startsWith('#text-')) {
@@ -424,6 +483,11 @@
             if (!currentUser) {
                 messageDiv.className = 'error';
                 messageDiv.textContent = 'Please log in to share text.';
+                return;
+            }
+            if (isUserBanned) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'You are banned and cannot create new notes.';
                 return;
             }
 
@@ -572,10 +636,15 @@
                         commentInputArea.classList.add('hidden');
                         commentLoginPrompt.classList.add('hidden');
                     }
-                    else if (currentUser) {
+                    else if (currentUser && !isUserBanned) { // Added check for isUserBanned
                         commentInputArea.classList.remove('hidden');
                         commentLoginPrompt.classList.add('hidden');
-                    } else {
+                    } else if (currentUser && isUserBanned) { // If logged in but banned
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsStatusMessage.textContent = 'You are banned and cannot post comments.';
+                    }
+                    else {
                         commentInputArea.classList.add('hidden');
                         commentLoginPrompt.classList.remove('hidden');
                     }
@@ -659,6 +728,11 @@
             if (!currentUser || !currentViewedText) {
                 commentMessage.className = 'error';
                 commentMessage.textContent = 'You must be logged in and viewing a text to post a comment.';
+                return;
+            }
+            if (isUserBanned) { // New: Check if user is banned
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'You are banned and cannot post comments.';
                 return;
             }
 
