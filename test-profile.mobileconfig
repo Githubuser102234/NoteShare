@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>Password</key>
+      <string>yourpassword</string>
+      <key>PayloadCertificateFileName</key>
+      <string>test.p12</string>
+      <key>PayloadContent</key>
+      <data>
+        b3BlbnNzbCByZXEgLXg1MDkgLW5ld2tleSByc2E6MjA0OCAtbm9kZXMgXAogIC1rZXlvdXQgbG9jYWwua2V5IC1vdXQgbG9jYWwuY3J0IC1kYXlzIDM2NSBcCiAgLXN1YmogIi9DPVVTL1NUPU5vd2hlcmUvTD1Ob25lL089U2VsZi9PVT1EZXYvQ049bG9jYWxob3N0IgoKb3BlbnNzbCBwa2NzMTIgLWV4cG9ydCBcCiAgLWlua2V5IGxvY2FsLmtleSBcCiAgLWluIGxvY2FsLmNydCBcCiAgLW91dCBsb2NhbC5wMTIgXAogIC1uYW1lICJTZWxmLVNpZ25lZCBEZXYgQ2VydCIgXAogIC1wYXNzb3V0IHBhc3M6ZGV2cGFzcw==
+      </data>
+      <key>PayloadDescription</key>
+      <string>Installs test certificate</string>
+      <key>PayloadDisplayName</key>
+      <string>Test Cert</string>
+      <key>PayloadIdentifier</key>
+      <string>com.example.testcert</string>
+      <key>PayloadType</key>
+      <string>com.apple.security.pkcs12</string>
+      <key>PayloadUUID</key>
+      <string>9F27A7E6-7D59-456E-B6A1-111111111111</string>
+      <key>PayloadVersion</key>
+      <integer>1</integer>
+    </dict>
+  </array>
+  <key>PayloadDisplayName</key>
+  <string>Test Certificate Profile</string>
+  <key>PayloadIdentifier</key>
+  <string>com.example.profile.testcert</string>
+  <key>PayloadRemovalDisallowed</key>
+  <false/>
+  <key>PayloadType</key>
+  <string>Configuration</string>
+  <key>PayloadUUID</key>
+  <string>11111111-2222-3333-4444-555555555555</string>
+  <key>PayloadVersion</key>
+  <integer>1</integer>
+</dict>
+</plist>
