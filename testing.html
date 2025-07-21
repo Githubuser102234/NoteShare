@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextShare</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            color: #0056b3;
+        }
+        input[type="email"],
+        input[type="password"],
+        textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px; /* Added for spacing between buttons */
+            margin-bottom: 10px; /* Added for spacing below buttons */
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .forgot-password-button {
+            background-color: #6c757d; /* A different color for distinction */
+            font-size: 0.9em;
+            padding: 8px 12px;
+            margin-top: 5px;
+        }
+        .forgot-password-button:hover {
+            background-color: #5a6268;
+        }
+        #auth-status, #message, #public-view-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #auth-status.success, #public-view-status.success, .copy-status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        #auth-status.error, #public-view-status.error, .copy-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .copy-status {
+            margin-left: 10px;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+        #shared-texts {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .text-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .text-item h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .text-item pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .text-item .actions button {
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none;
+        }
+        #public-text-view {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        #public-text-view h2 {
+            margin-bottom: 15px;
+        }
+        #public-text-content {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+        }
+        #public-text-actions button {
+            margin-right: 10px;
+            margin-top: 15px;
+        }
+        /* New style for timestamp */
+        .text-timestamp {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+            display: block; /* Ensures it takes full width */
+        }
+        /* New styles for comments */
+        .comments-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .comment-input-area textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .comment-item {
+            background-color: #f0f8ff; /* Light blue for comments */
+            border: 1px solid #d0e8ff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .comment-timestamp {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+        }
+        .comments-status {
+            font-style: italic;
+            color: #d9534f; /* Reddish for warning/status */
+            margin-bottom: 10px;
+        }
+        .toggle-button.active {
+            background-color: #28a745; /* Green for active/enabled */
+        }
+        /* Style for Make Public/Private buttons */
+        .public-toggle-button {
+            background-color: #17a2b8; /* Info blue */
+        }
+        .public-toggle-button:hover {
+            background-color: #138496;
+        }
+        .public-toggle-button.private {
+            background-color: #dc3545; /* Danger red */
+        }
+        .public-toggle-button.private:hover {
+            background-color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to TextShare</h1>
+
+        <div id="auth-section">
+            <h2>Sign Up / Log In</h2>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button id="signup-button">Sign Up</button>
+            <button id="login-button">Log In</button>
+            <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
+            <button id="logout-button" class="hidden">Log Out</button>
+            <div id="auth-status"></div>
+        </div>
+
+        <hr>
+
+        <div id="create-text-section" class="hidden">
+            <h2>Share New Text</h2>
+            <input type="text" id="text-title" placeholder="Title of your text" required>
+            <textarea id="text-content" rows="10" placeholder="Enter your text here..." required></textarea>
+            <button id="share-text-button">Share Text</button>
+            <div id="message"></div>
+        </div>
+
+        <hr>
+
+        <div id="shared-texts-section" class="hidden">
+            <h2>Your Shared Texts</h2>
+            <div id="shared-texts">
+                </div>
+        </div>
+
+        <div id="public-text-view" class="hidden">
+            <h2>Viewing Shared Text</h2>
+            <h3 id="public-text-title"></h3>
+            <span id="public-text-timestamp" class="text-timestamp"></span>
+            <pre id="public-text-content"></pre>
+            <div id="public-text-actions">
+                <button id="public-download-button">Download</button>
+                <button id="public-raw-button">View Raw</button>
+                <button id="public-copy-link-button">Copy Link</button>
+                <button id="public-share-button">Share Text</button> <button id="report-button">Report</button> <span id="public-copy-status" class="copy-status"></span>
+            </div>
+            <div id="public-view-status"></div>
+            <button id="go-back-button" class="hidden">Go Back to My Texts</button>
+
+            <div class="comments-section">
+                <h3>Comments</h3>
+                <p id="comments-status-message" class="comments-status"></p> <div id="comments-list">
+                    </div>
+                <div id="comment-input-area" class="hidden">
+                    <h4>Add a Comment</h4>
+                    <textarea id="new-comment-content" rows="3" placeholder="Enter your comment here..."></textarea>
+                    <button id="post-comment-button">Post Comment</button>
+                    <div id="comment-message" class="copy-status"></div>
+                </div>
+                <div id="comment-login-prompt">
+                    <p>Please log in to leave a comment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        // Import Timestamp from Firestore to store dates correctly
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebasestorage.app",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Get DOM elements
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const signupButton = document.getElementById('signup-button');
+        const loginButton = document.getElementById('login-button');
+        const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
+        const logoutButton = document.getElementById('logout-button');
+        const authStatusDiv = document.getElementById('auth-status');
+        const createTextSection = document.getElementById('create-text-section');
+        const sharedTextsSection = document.getElementById('shared-texts-section');
+        const textTitleInput = document.getElementById('text-title');
+        const textAreas = document.getElementById('text-content');
+        const shareTextButton = document.getElementById('share-text-button');
+        const messageDiv = document.getElementById('message');
+        const sharedTextsDiv = document.getElementById('shared-texts');
+
+        // New elements for public view
+        const publicTextViewSection = document.getElementById('public-text-view');
+        const publicTextTitle = document.getElementById('public-text-title');
+        const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
+        const publicTextContent = document.getElementById('public-text-content');
+        const publicDownloadButton = document.getElementById('public-download-button');
+        const publicRawButton = document.getElementById('public-raw-button');
+        const publicCopyLinkButton = document.getElementById('public-copy-link-button');
+        const publicShareButton = document.getElementById('public-share-button'); // NEW SHARE BUTTON
+        const reportButton = document.getElementById('report-button'); // NEW REPORT BUTTON
+        const publicCopyStatus = document.getElementById('public-copy-status');
+        const publicViewStatus = document.getElementById('public-view-status');
+        const goBackButton = document.getElementById('go-back-button'); // New
+
+        // New elements for comments
+        const commentsList = document.getElementById('comments-list');
+        const commentInputArea = document.getElementById('comment-input-area');
+        const newCommentContent = document.getElementById('new-comment-content');
+        const postCommentButton = document.getElementById('post-comment-button');
+        const commentMessage = document.getElementById('comment-message');
+        const commentLoginPrompt = document.getElementById('comment-login-prompt');
+        const commentsStatusMessage = document.getElementById('comments-status-message'); // New
+
+        let currentUser = null; // To store the current logged-in user
+        let currentViewedText = null; // To store text data for public view
+
+        // --- Authentication Functions ---
+
+        signupButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully signed up and logged in as ${userCredential.user.email}`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error signing up: ${error.message}`;
+            }
+        });
+
+        loginButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully logged in as ${userCredential.user.email}`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error logging in: ${error.message}`;
+            }
+        });
+
+        // New: Forgot Password functionality
+        forgotPasswordButton.addEventListener('click', async () => {
+            const email = emailInput.value;
+            if (!email) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please enter your email to reset password.';
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Password reset email sent to ${email}. Please check your inbox.`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error sending password reset email: ${error.message}`;
+            }
+        });
+
+        logoutButton.addEventListener('click', async () => {
+            try {
+                await signOut(auth);
+                // When logged out, clear the hash and show the default (auth) view
+                window.location.hash = ''; // Remove hash
+                displayMainUI(); // Go back to default UI state
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = 'Successfully logged out.';
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error logging out: ${error.message}`;
+            }
+        });
+
+        // Function to control UI visibility
+        function displayMainUI(showPublicView = false) {
+            // Hide all sections first
+            document.getElementById('auth-section').classList.add('hidden');
+            createTextSection.classList.add('hidden');
+            sharedTextsSection.classList.add('hidden');
+            publicTextViewSection.classList.add('hidden');
+            goBackButton.classList.add('hidden');
+
+            if (showPublicView) {
+                publicTextViewSection.classList.remove('hidden');
+            } else if (currentUser) {
+                createTextSection.classList.remove('hidden');
+                sharedTextsSection.classList.remove('hidden');
+                document.getElementById('auth-section').classList.remove('hidden'); // Show auth section to display Logout button
+                logoutButton.classList.remove('hidden'); // Show logout button
+                signupButton.classList.add('hidden'); // Hide signup button when logged in
+                loginButton.classList.add('hidden'); // Hide login button when logged in
+                forgotPasswordButton.classList.add('hidden'); // Hide forgot password button when logged in
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                logoutButton.classList.add('hidden'); // Hide logout button when logged out
+                signupButton.classList.remove('hidden'); // Show signup button when logged out
+                loginButton.classList.remove('hidden'); // Show login button when logged out
+                forgotPasswordButton.classList.remove('hidden'); // Show forgot password button when logged out
+            }
+            authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
+            authStatusDiv.className = currentUser ? 'success' : '';
+        }
+
+
+        // Listen for authentication state changes
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            // When auth state changes, re-evaluate UI based on hash (if any) or login status
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6);
+                showPublicText(textId); // Display public text if hash is present
+            } else {
+                displayMainUI(false); // Otherwise, show logged-in or auth sections
+                if (currentUser) {
+                    loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
+                } else {
+                    sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
+                }
+            }
+        });
+
+        // --- Text Sharing Functions ---
+
+        shareTextButton.addEventListener('click', async () => {
+            if (!currentUser) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Please log in to share text.';
+                return;
+            }
+
+            const title = textTitleInput.value.trim();
+            const content = textAreas.value.trim();
+
+            if (!title || !content) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Please enter both title and content.';
+                return;
+            }
+
+            try {
+                // Store timestamp as a Firebase Timestamp, and add new comment control fields
+                await addDoc(collection(db, "texts"), {
+                    userId: currentUser.uid,
+                    title: title,
+                    content: content,
+                    timestamp: Timestamp.now(), // Use Timestamp.now()
+                    commentsDisabled: false, // New: Comments are enabled by default
+                    commentsLocked: false, // New: Comments are unlocked by default
+                    isPublic: false // New: Texts are private by default
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = 'Text shared successfully!';
+                textTitleInput.value = '';
+                textAreas.value = '';
+                loadSharedTexts(currentUser.uid); // Reload texts after sharing
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error sharing text: ${error.message}`;
+            }
+        });
+
+        async function loadSharedTexts(userId) {
+            sharedTextsDiv.innerHTML = 'Loading your texts...';
+            try {
+                const q = query(collection(db, "texts"), where("userId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                sharedTextsDiv.innerHTML = ''; // Clear loading message
+
+                if (querySnapshot.empty) {
+                    sharedTextsDiv.innerHTML = '<p>You haven\'t shared any texts yet.</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const textData = docSnap.data();
+                    const textId = docSnap.id;
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
+                    const commentsDisabled = textData.commentsDisabled || false; // Default to false if not set
+                    const commentsLocked = textData.commentsLocked || false;     // Default to false if not set
+                    const isPublic = textData.isPublic || false; // Default to false if not set
+
+                    const disableButtonText = commentsDisabled ? 'Enable Comments' : 'Disable Comments';
+                    const disableButtonClass = commentsDisabled ? 'toggle-button active' : 'toggle-button';
+
+                    const lockButtonText = commentsLocked ? 'Unlock Comments' : 'Lock Comments';
+                    const lockButtonClass = commentsLocked ? 'toggle-button active' : 'toggle-button';
+
+                    const publicButtonText = isPublic ? 'Make Private' : 'Make Public';
+                    const publicButtonClass = isPublic ? 'public-toggle-button private' : 'public-toggle-button';
+
+
+                    const textItem = document.createElement('div');
+                    textItem.className = 'text-item';
+                    textItem.id = `text-${textId}`; // Add an ID for direct linking
+
+                    textItem.innerHTML = `
+                        <h3><a href="#text-${textId}">${textData.title}</a></h3>
+                        <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
+                        <pre>${textData.content}</pre>
+                        <div class="actions">
+                            <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
+                            <button onclick="viewRawText('${encodeURIComponent(textData.content)}')">View Raw</button>
+                            <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
+                            <button onclick="shareTextNative('${textId}', '${textData.title}')">Share Text</button> <span class="copy-status" id="copy-status-${textId}"></span>
+                            <button onclick="deleteText('${textId}')">Delete</button>
+                            <button class="${disableButtonClass}" onclick="window.toggleCommentsDisabled('${textId}', ${commentsDisabled})">${disableButtonText}</button>
+                            <button class="${lockButtonClass}" onclick="window.toggleCommentsLocked('${textId}', ${commentsLocked})">${lockButtonText}</button>
+                            <button class="${publicButtonClass}" onclick="window.togglePublicStatus('${textId}', ${isPublic})">${publicButtonText}</button>
+                        </div>
+                    `;
+                    sharedTextsDiv.appendChild(textItem);
+                });
+            } catch (error) {
+                sharedTextsDiv.innerHTML = `<p class="error">Error loading texts: ${error.message}</p>`;
+            }
+        }
+
+        // --- Public Text View Functions ---
+
+        window.showPublicText = async (textId) => {
+            displayMainUI(true); // Show public view, hide others
+            goBackButton.classList.remove('hidden'); // Show go back button
+            publicTextTitle.textContent = 'Loading...';
+            publicTextTimestamp.textContent = ''; // Clear timestamp
+            publicTextContent.textContent = 'Loading text content...';
+            publicViewStatus.textContent = ''; // Clear previous status
+            publicCopyStatus.textContent = ''; // Clear previous copy status
+            currentViewedText = null; // Clear previous text data
+            commentsList.innerHTML = 'Loading comments...'; // Clear and show loading for comments
+            commentMessage.textContent = ''; // Clear comment message
+            commentsStatusMessage.textContent = ''; // Clear comment status message
+
+            try {
+                const docRef = doc(db, "texts", textId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const textData = docSnap.data();
+                    const isPublic = textData.isPublic || false; // Default to false if not set
+                    const isOwner = currentUser && textData.userId === currentUser.uid;
+
+                    // If text is private and current user is not the owner, deny access
+                    if (!isPublic && !isOwner) {
+                        publicTextTitle.textContent = 'Access Denied';
+                        publicTextTimestamp.textContent = '';
+                        publicTextContent.textContent = 'This text is private and can only be viewed by its owner.';
+                        publicViewStatus.className = 'error';
+                        publicViewStatus.textContent = 'Text is private.';
+                        // Disable buttons
+                        publicDownloadButton.onclick = null;
+                        publicRawButton.onclick = null;
+                        publicCopyLinkButton.onclick = null;
+                        publicShareButton.onclick = null;
+                        reportButton.onclick = null;
+                        commentsList.innerHTML = '<p>Access denied to comments.</p>';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsStatusMessage.textContent = '';
+                        return;
+                    }
+
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date(); // Convert Firebase Timestamp to JS Date
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
+                    publicTextTitle.textContent = textData.title;
+                    publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`; // Set timestamp
+                    publicTextContent.textContent = textData.content;
+                    currentViewedText = {
+                        title: textData.title,
+                        content: textData.content,
+                        id: textId,
+                        commentsDisabled: textData.commentsDisabled || false,
+                        commentsLocked: textData.commentsLocked || false,
+                        isPublic: isPublic // Store public status
+                    }; // Store for buttons and link
+
+                    publicViewStatus.className = 'success';
+                    publicViewStatus.textContent = 'Text loaded successfully.';
+
+                    // Attach event listeners for public download/raw/copy/report/share buttons
+                    publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
+                    publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
+                    publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
+                    publicShareButton.onclick = () => shareTextNative(currentViewedText.id, currentViewedText.title); // NEW SHARE BUTTON CLICK HANDLER
+                    // NEW REPORT BUTTON CLICK HANDLER: Pass the current note's link
+                    reportButton.onclick = () => {
+                        const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+                        const reportUrl = `https://githubuser102234.github.io/NoteShare/report?link=${encodeURIComponent(currentNoteLink)}`;
+                        window.location.href = reportUrl;
+                    };
+
+                    // Control comment section visibility based on commentsDisabled and commentsLocked
+                    if (currentViewedText.commentsDisabled) {
+                        commentsStatusMessage.textContent = 'Comments are disabled for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsList.innerHTML = '<p>Comments are disabled.</p>';
+                    } else if (currentViewedText.commentsLocked) {
+                         commentsStatusMessage.textContent = 'Comments are locked for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    }
+                    else if (currentUser) {
+                        commentInputArea.classList.remove('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    } else {
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.remove('hidden');
+                    }
+
+                    // Load comments only if not explicitly disabled
+                    if (!currentViewedText.commentsDisabled) {
+                        await loadComments(textId);
+                    }
+
+
+                } else {
+                    publicTextTitle.textContent = 'Text Not Found';
+                    publicTextTimestamp.textContent = ''; // Clear timestamp
+                    publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
+                    publicViewStatus.className = 'error';
+                    publicViewStatus.textContent = 'Text not found.';
+                    // Disable buttons if text not found
+                    publicDownloadButton.onclick = null;
+                    publicRawButton.onclick = null;
+                    publicCopyLinkButton.onclick = null; // Disable copy button too
+                    publicShareButton.onclick = null; // Disable share button too
+                    reportButton.onclick = null; // Disable report button
+                    commentsList.innerHTML = '<p>No comments available for this text.</p>'; // No comments if text not found
+                    commentInputArea.classList.add('hidden'); // Hide comment input
+                    commentLoginPrompt.classList.add('hidden'); // Hide login prompt
+                    commentsStatusMessage.textContent = ''; // Clear message
+                }
+            } catch (error) {
+                publicTextTitle.textContent = 'Error';
+                publicTextTimestamp.textContent = ''; // Clear timestamp
+                publicTextContent.textContent = 'Could not load text due to an error.';
+                publicViewStatus.className = 'error';
+                publicViewStatus.textContent = `Error loading text: ${error.message}`;
+                // Disable buttons
+                publicDownloadButton.onclick = null;
+                publicRawButton.onclick = null;
+                publicCopyLinkButton.onclick = null; // Disable copy button too
+                publicShareButton.onclick = null; // Disable share button too
+                reportButton.onclick = null; // Disable report button
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+                commentInputArea.classList.add('hidden'); // Hide comment input
+                commentLoginPrompt.classList.add('hidden'); // Hide login prompt
+                commentsStatusMessage.textContent = ''; // Clear message
+            }
+        };
+
+        // --- Comment Functions ---
+
+        async function loadComments(textId) {
+            commentsList.innerHTML = ''; // Clear existing comments
+            try {
+                // Query comments collection for comments related to this textId, ordered by timestamp
+                const q = query(collection(db, "comments"), where("textId", "==", textId), orderBy("timestamp", "asc"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    commentsList.innerHTML = '<p>No comments yet. Be the first to comment!</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const commentData = doc.data();
+                    const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
+                    const formattedDate = date.toLocaleString(); // e.g., "1/1/2023, 10:30:00 AM"
+
+                    const commentItem = document.createElement('div');
+                    commentItem.className = 'comment-item';
+                    commentItem.innerHTML = `
+                        <span class="comment-author">${commentData.userEmail || 'Anonymous'}</span>
+                        <p>${commentData.content}</p>
+                        <span class="comment-timestamp">${formattedDate}</span>
+                    `;
+                    commentsList.appendChild(commentItem);
+                });
+            } catch (error) {
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+            }
+        }
+
+        postCommentButton.addEventListener('click', async () => {
+            if (!currentUser || !currentViewedText) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'You must be logged in and viewing a text to post a comment.';
+                return;
+            }
+
+            // Check if comments are disabled or locked
+            if (currentViewedText.commentsDisabled) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently disabled for this text.';
+                return;
+            }
+            if (currentViewedText.commentsLocked) {
+                 commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently locked for this text.';
+                return;
+            }
+
+            const commentContent = newCommentContent.value.trim();
+
+            if (!commentContent) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Please enter your comment.';
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "comments"), {
+                    textId: currentViewedText.id,
+                    userId: currentUser.uid,
+                    userEmail: currentUser.email, // Store user email for display
+                    content: commentContent,
+                    timestamp: Timestamp.now()
+                });
+                commentMessage.className = 'success';
+                commentMessage.textContent = 'Comment posted successfully!';
+                newCommentContent.value = ''; // Clear the input field
+                await loadComments(currentViewedText.id); // Reload comments to show the new one
+            } catch (error) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = `Error posting comment: ${error.message}`;
+            }
+        });
+
+        // --- New Comment Management Functions ---
+
+        window.toggleCommentsDisabled = async (textId, currentStatus) => {
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsDisabled: !currentStatus,
+                    commentsLocked: false // If you disable comments, unlock them as well.
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'disabled' : 'enabled'} successfully!`;
+                loadSharedTexts(currentUser.uid); // Reload to update UI
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comments: ${error.message}`;
+            }
+        };
+
+        window.toggleCommentsLocked = async (textId, currentStatus) => {
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsLocked: !currentStatus
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'locked' : 'unlocked'} successfully!`;
+                loadSharedTexts(currentUser.uid); // Reload to update UI
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comment lock: ${error.message}`;
+            }
+        };
+
+        // --- New Public/Private Toggle Function ---
+        window.togglePublicStatus = async (textId, currentStatus) => {
+            if (!currentUser) {
+                alert('You must be logged in to change the public status of your texts.');
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    isPublic: !currentStatus
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Text is now ${!currentStatus ? 'public' : 'private'}!`;
+                loadSharedTexts(currentUser.uid); // Reload to update UI
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling public status: ${error.message}`;
+            }
+        };
+
+        // --- Utility Functions ---
+
+        window.downloadText = (title, content) => {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + decodeURIComponent(content));
+            element.setAttribute('download', `${title}.txt`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        };
+
+        window.viewRawText = (content) => {
+            const rawTextWindow = window.open('', '_blank');
+            rawTextWindow.document.write(`<pre>${decodeURIComponent(content)}</pre>`);
+            rawTextWindow.document.close();
+        };
+
+        window.copyShareLink = async (textId, buttonElement) => {
+            // Corrected shareLink to include the GitHub Pages repository name
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            let statusElement;
+
+            if (buttonElement.id === 'public-copy-link-button') {
+                statusElement = publicCopyStatus;
+            } else {
+                statusElement = document.getElementById(`copy-status-${textId}`);
+            }
+
+            try {
+                await navigator.clipboard.writeText(shareLink);
+                statusElement.className = 'copy-status success';
+                statusElement.textContent = 'Copied!';
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000); // Clear after 2 seconds
+            } catch (err) {
+                statusElement.className = 'copy-status error';
+                statusElement.textContent = 'Failed to copy!';
+                console.error('Failed to copy: ', err);
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
+            }
+        };
+
+        // NEW: shareTextNative function for Web Share API
+        window.shareTextNative = async (textId, title) => {
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `TextShare: ${title}`,
+                        url: shareLink,
+                    });
+                    console.log('Text shared successfully');
+                } catch (error) {
+                    console.error('Error sharing text:', error);
+                }
+            } else {
+                // Fallback for browsers that do not support Web Share API
+                alert('Your browser does not support the Web Share API. You can copy the link instead.');
+                // Optionally, you could automatically copy the link to clipboard here as a fallback
+                // window.copyShareLink(textId, publicCopyLinkButton); // Or any relevant button for feedback
+            }
+        };
+
+        window.deleteText = async (textId) => {
+            if (!currentUser) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'You must be logged in to delete texts.';
+                return;
+            }
+            if (!confirm('Are you sure you want to delete this text?')) {
+                return;
+            }
+            try {
+                // Delete text document
+                await deleteDoc(doc(db, "texts", textId));
+
+                // Also delete all comments associated with this text
+                const q = query(collection(db, "comments"), where("textId", "==", textId));
+                const querySnapshot = await getDocs(q);
+                const deletePromises = [];
+                querySnapshot.forEach((commentDoc) => {
+                    deletePromises.push(deleteDoc(doc(db, "comments", commentDoc.id)));
+                });
+                await Promise.all(deletePromises);
+
+
+                messageDiv.className = 'success';
+                messageDiv.textContent = 'Text and associated comments deleted successfully!';
+                loadSharedTexts(currentUser.uid); // Reload texts after deletion
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error deleting text: ${error.message}`;
+            }
+        };
+
+        /**
+         * Formats a given Date object into a human-readable "time ago" string.
+         * @param {Date} date - The date to format.
+         * @returns {string} - The formatted string (e.g., "5 minutes ago", "2 days ago").
+         */
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) {
+                return Math.floor(interval) + " years ago";
+            }
+            interval = seconds / 2592000;
+            if (interval > 1) {
+                return Math.floor(interval) + " months ago";
+            }
+            interval = seconds / 86400;
+            if (interval > 1) {
+                return Math.floor(interval) + " days ago";
+            }
+            interval = seconds / 3600;
+            if (interval > 1) {
+                return Math.floor(interval) + " hours ago";
+            }
+            interval = seconds / 60;
+            if (interval > 1) {
+                return Math.floor(interval) + " minutes ago";
+            }
+            return Math.floor(seconds) + " seconds ago";
+        }
+
+
+        // --- Initial Load Logic and Hash Change Listener ---
+
+        // Handle hash changes (when user clicks a #link or changes URL hash manually)
+        window.addEventListener('hashchange', () => {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6); // Remove '#text-' prefix
+                showPublicText(textId);
+            } else {
+                // If hash is cleared or not a text hash, display the appropriate UI
+                displayMainUI(false);
+                if (currentUser) {
+                    loadSharedTexts(currentUser.uid);
+                }
+            }
+        });
+
+        // Handle initial page load
+        window.addEventListener('load', () => {
+            const hash = window.location.hash;
+            if (hash && hash.startsWith('#text-')) {
+                const textId = hash.substring(6); // Remove '#text-' prefix
+                showPublicText(textId);
+            } else {
+                // Initial display when no hash is present
+                // onAuthStateChanged will handle this for initial load too.
+            }
+        });
+
+        // Add 'Go Back' button functionality
+        goBackButton.addEventListener('click', () => {
+            window.location.hash = ''; // Clear the hash, triggering the hashchange listener
+        });
+
+    </script>
+</body>
+</html>
