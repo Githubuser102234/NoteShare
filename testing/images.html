@@ -205,7 +205,8 @@
             border-radius: 4px;
             background-color: #f0f0f0;
         }
-        .image-preview-item img {
+        .image-preview-item img,
+        .image-preview-item video { /* Added video to preview item styling */
             max-width: 100px;
             max-height: 100px;
             display: block;
@@ -237,6 +238,17 @@
             border-radius: 4px;
             border: 1px solid #ddd;
         }
+        /* Style for the "NEW" indicator */
+        .new-indicator {
+            background-color: #007bff; /* Blue background */
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 5px;
+            vertical-align: middle;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -262,7 +274,7 @@
             <textarea id="text-content" rows="10" placeholder="Enter your text here..." required></textarea>
 
             <input type="file" id="image-upload-input" accept="image/*,video/*" multiple class="hidden">
-            <button id="add-image-button">Add Images/Videos</button>
+            <button id="add-image-button">Add Images/Videos<span class="new-indicator">NEW</span></button>
             <div id="image-previews"></div>
             <button id="share-text-button">Share Text</button>
             <div id="message"></div>
@@ -281,18 +293,22 @@
             <h3 id="public-text-title"></h3>
             <span id="public-text-timestamp" class="text-timestamp"></span>
             <pre id="public-text-content"></pre>
-            <div id="public-text-images"></div> <div id="public-text-actions">
+            <div id="public-text-images"></div>
+            <div id="public-text-actions">
                 <button id="public-download-button">Download</button>
                 <button id="public-raw-button">View Raw</button>
                 <button id="public-copy-link-button">Copy Link</button>
-                <button id="public-share-button">Share Text</button> <button id="report-button">Report</button> <span id="public-copy-status" class="copy-status"></span>
+                <button id="public-share-button">Share Text</button>
+                <button id="report-button">Report</button>
+                <span id="public-copy-status" class="copy-status"></span>
             </div>
             <div id="public-view-status"></div>
             <button id="go-back-button" class="hidden">Go Back to My Texts</button>
 
             <div class="comments-section">
                 <h3>Comments</h3>
-                <p id="comments-status-message" class="comments-status"></p> <div id="comments-list">
+                <p id="comments-status-message" class="comments-status"></p>
+                <div id="comments-list">
                 </div>
                 <div id="comment-input-area" class="hidden">
                     <h4>Add a Comment</h4>
@@ -489,7 +505,8 @@
                 const textId = hash.substring(6);
                 showPublicText(textId); // Display public text if hash is present
             } else {
-                displayMainUI(false); // Otherwise, show logged-in or auth sections
+                // Otherwise, show logged-in or auth sections
+                displayMainUI(false);
                 if (currentUser) {
                     loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
                 } else {
@@ -684,7 +701,7 @@
                         const fileExtension = imageUrl.split('.').pop().toLowerCase();
                         if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
                             imageHtml += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
-                        } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                        } else if (['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(fileExtension)) { // Added common video formats
                             imageHtml += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
                         }
                     });
@@ -697,15 +714,17 @@
                         <h3><a href="#text-${textId}">${textData.title}</a></h3>
                         <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
                         <pre>${textData.content}</pre>
-                        ${imageHtml} <div class="actions">
+                        ${imageHtml}
+                        <div class="actions">
                             <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
                             <button onclick="viewRawText('${encodeURIComponent(textData.content)}')">View Raw</button>
                             <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
-                            <button onclick="shareTextNative('${textId}', '${textData.title}')">Share Text</button> <span class="copy-status" id="copy-status-${textId}"></span>
+                            <button onclick="shareTextNative('${textId}', '${textData.title}')">Share Text</button>
+                            <span class="copy-status" id="copy-status-${textId}"></span>
                             <button onclick="deleteText('${textId}')">Delete</button>
                             <button class="${disableButtonClass}" onclick="window.toggleCommentsDisabled('${textId}', ${commentsDisabled})">${disableButtonText}</button>
                             <button class="${lockButtonClass}" onclick="window.toggleCommentsLocked('${textId}', ${commentsLocked})">${lockButtonText}</button>
-                            <button class="${publicButtonClass}" onclick="window.togglePublicStatus('${textId}', ${isPublic})">${publicButtonText}</button>
+                            <button class="${publicButtonClass}" onclick="window.togglePublicStatus('${textId}', ${isPublic})">${publicButtonText}<span class="new-indicator">NEW</span></button>
                         </div>
                     `;
                     sharedTextsDiv.appendChild(textItem);
@@ -778,14 +797,14 @@
                         images: textData.images || [] // Store images
                     }; // Store for buttons and link
 
-                    // Display images in public view
+                    // Display images/videos in public view
                     publicTextImagesDiv.innerHTML = '';
                     if (currentViewedText.images && currentViewedText.images.length > 0) {
                         currentViewedText.images.forEach(imageUrl => {
                             const fileExtension = imageUrl.split('.').pop().toLowerCase();
                             if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
                                 publicTextImagesDiv.innerHTML += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
-                            } else if (['mp4', 'webm', 'ogg'].includes(fileExtension)) {
+                            } else if (['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(fileExtension)) { // Added common video formats
                                 publicTextImagesDiv.innerHTML += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
                             }
                         });
