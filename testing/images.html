@@ -273,7 +273,7 @@
             <input type="text" id="text-title" placeholder="Title of your text" required>
             <textarea id="text-content" rows="10" placeholder="Enter your text here..." required></textarea>
 
-            <input type="file" id="image-upload-input" accept="image/*,video/*" multiple class="hidden">
+            <input type="file" id="image-upload-input" accept="image/*,video/*,.mp4,.mov,.wmv,.avi,.mkv,.flv,.webm,.ogg,.3gp,.m4v,.mpg,.mpeg" multiple class="hidden">
             <button id="add-image-button">Add Images/Videos<span class="new-indicator">NEW</span></button>
             <div id="image-previews"></div>
             <button id="share-text-button">Share Text</button>
@@ -624,7 +624,7 @@
             }
 
             messageDiv.className = '';
-            messageDiv.textContent = 'Sharing text and uploading images...';
+            messageDiv.textContent = 'Sharing text and uploading files...';
 
             let imageUrls = [];
             if (selectedFiles.length > 0) {
@@ -633,7 +633,7 @@
                     imageUrls = uploadedUrls;
                 } else {
                     // If image upload failed, stop the process
-                    messageDiv.textContent = 'Failed to upload one or more images. Text not shared.';
+                    messageDiv.textContent = 'Failed to upload one or more files. Text not shared.';
                     return;
                 }
             }
@@ -698,10 +698,10 @@
 
                     let imageHtml = '';
                     images.forEach(imageUrl => {
-                        const fileExtension = imageUrl.split('.').pop().toLowerCase();
+                        const fileExtension = imageUrl.split('.').pop().toLowerCase().split('?')[0];
                         if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
                             imageHtml += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
-                        } else if (['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(fileExtension)) { // Added common video formats
+                        } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp'].includes(fileExtension)) {
                             imageHtml += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
                         }
                     });
@@ -801,10 +801,10 @@
                     publicTextImagesDiv.innerHTML = '';
                     if (currentViewedText.images && currentViewedText.images.length > 0) {
                         currentViewedText.images.forEach(imageUrl => {
-                            const fileExtension = imageUrl.split('.').pop().toLowerCase();
+                            const fileExtension = imageUrl.split('.').pop().toLowerCase().split('?')[0];
                             if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
                                 publicTextImagesDiv.innerHTML += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
-                            } else if (['mp4', 'webm', 'ogg', 'mov', 'avi'].includes(fileExtension)) { // Added common video formats
+                            } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp'].includes(fileExtension)) {
                                 publicTextImagesDiv.innerHTML += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
                             }
                         });
