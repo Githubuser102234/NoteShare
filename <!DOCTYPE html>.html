@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Windows 11 Boot Loading Circle Only</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #000; /* Dark background */
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .windows-loader-circle-container {
+            position: relative; /* Container for the SVG to ensure it's centered */
+            width: 100px; /* Define the size of the loader area */
+            height: 100px;
+            display: flex; /* To perfectly center the SVG inside if needed */
+            justify-content: center;
+            align-items: center;
+        }
+
+        .svg-loader {
+            width: 100%; /* Make SVG fill its container */
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform: rotate(-90deg); /* Start the animation at the top */
+        }
+
+        .svg-loader circle {
+            fill: none;
+            stroke: #0078d4; /* Windows blue */
+            stroke-width: 4;
+            stroke-linecap: round;
+            transform-origin: center;
+            animation:
+                svg-dash 2s cubic-bezier(0.4, 0, 0.2, 1) infinite, /* Controls segment growth/shrink */
+                svg-rotate 2s linear infinite; /* Controls overall rotation */
+        }
+
+        /* Keyframes for the segment's drawing/undrawing and movement */
+        @keyframes svg-dash {
+            0% {
+                stroke-dasharray: 1, 200; /* Start with a very small visible part */
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 200; /* Grow the visible part */
+                stroke-dashoffset: -35px; /* Move the visible part along the circle */
+            }
+            100% {
+                stroke-dasharray: 90, 200; /* End with the same visible part size */
+                stroke-dashoffset: -125px; /* Continue moving it further */
+            }
+        }
+
+        /* Keyframes for the overall continuous rotation */
+        @keyframes svg-rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="windows-loader-circle-container">
+        <svg class="svg-loader" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="48"></circle>
+        </svg>
+    </div>
+</body>
+</html>
