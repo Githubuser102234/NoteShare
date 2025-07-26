@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loader Arc Spinner (SVG) - Blue</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+
+        .spinner-arc {
+            width: 60px;
+            height: 60px;
+        }
+
+        .spinner-arc circle {
+            fill: none;
+            stroke-width: 5;
+            stroke-linecap: round;
+            stroke: #007bff; /* Changed to Blue! */
+            transform-origin: center; /* Important for rotation */
+            animation:
+                spin-arc 2s linear infinite,
+                dash-arc 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes spin-arc {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dash-arc {
+            0% {
+                stroke-dasharray: 1, 150; /* Start with small dash, large gap */
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150; /* Dash grows */
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 90, 150; /* Dash shrinks again */
+                stroke-dashoffset: -124;
+            }
+        }
+    </style>
+</head>
+<body>
+    <svg class="spinner-arc" viewBox="0 0 50 50">
+        <circle cx="25" cy="25" r="20"></circle>
+    </svg>
+</body>
+</html>
