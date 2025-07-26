@@ -302,56 +302,54 @@
             z-index: 9999; /* Ensure it's on top of everything */
         }
 
-        .windows-loader-circle-container {
-            position: relative;
-            width: 100px;
-            height: 100px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            /* Apply the rotation animation here */
-            animation: svg-rotate 2s linear infinite;
+        /* NEW SPINNER STYLES */
+        .spinner-arc-container {
+            width: 60px;
+            height: 60px;
+            position: relative; /* Essential for positioning the SVG */
         }
 
-        .svg-loader {
-            width: 100%;
+        .spinner-arc {
+            width: 100%; /* Make SVG fill its container */
             height: 100%;
             position: absolute;
             top: 0;
             left: 0;
-            /* Keep the initial rotation for correct orientation */
-            transform: rotate(-90deg);
+            transform: rotate(-90deg); /* Start the circle from the top */
         }
 
-        .svg-loader circle {
+        .spinner-arc circle {
             fill: none;
-            stroke: #0078d4; /* Windows blue */
-            stroke-width: 4;
+            stroke-width: 5;
             stroke-linecap: round;
-            transform-origin: center;
-            /* Only apply the dash animation to the circle */
-            animation: svg-dash 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            stroke: #007bff; /* Blue color */
+            transform-origin: center; /* Important for rotation */
+            animation:
+                spin-arc 2s linear infinite,
+                dash-arc 1.5s ease-in-out infinite alternate;
         }
 
-        @keyframes svg-dash {
-            0% {
-                stroke-dasharray: 1, 200;
-                stroke-dashoffset: 0;
-            }
-            50% {
-                stroke-dasharray: 90, 200;
-                stroke-dashoffset: -35px;
-            }
-            100% {
-                stroke-dasharray: 90, 200;
-                stroke-dashoffset: -125px;
-            }
-        }
-
-        @keyframes svg-rotate {
+        @keyframes spin-arc {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        @keyframes dash-arc {
+            0% {
+                stroke-dasharray: 1, 150; /* Start with small dash, large gap */
+                stroke-dashoffset: 0;
+            }
+            50% {
+                stroke-dasharray: 90, 150; /* Dash grows */
+                stroke-dashoffset: -35;
+            }
+            100% {
+                stroke-dasharray: 90, 150; /* Dash shrinks again */
+                stroke-dashoffset: -124;
+            }
+        }
+        /* End NEW SPINNER STYLES */
+
         /* New style for Google Sign-In button */
         .google-signin-button {
             background-color: #db4437; /* Google Red */
@@ -363,9 +361,9 @@
 </head>
 <body>
     <div id="loading-overlay" class="hidden">
-        <div class="windows-loader-circle-container">
-            <svg class="svg-loader" viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="48"></circle>
+        <div class="spinner-arc-container">
+            <svg class="spinner-arc" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20"></circle>
             </svg>
         </div>
     </div>
