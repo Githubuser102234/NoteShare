@@ -350,6 +350,13 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        /* New style for Google Sign-In button */
+        .google-signin-button {
+            background-color: #db4437; /* Google Red */
+        }
+        .google-signin-button:hover {
+            background-color: #c23321;
+        }
     </style>
 </head>
 <body>
@@ -384,7 +391,7 @@
             <button id="signup-button">Sign Up</button>
             <button id="login-button">Log In</button>
             <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
-            <button id="logout-button" class="hidden">Log Out</button>
+            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button> <button id="logout-button" class="hidden">Log Out</button>
             <button id="open-account-management" class="hidden">Account Management</button> <div id="auth-status"></div>
         </div>
 
@@ -450,7 +457,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         // Import Timestamp from Firestore to store dates correctly
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Added updateEmail, updatePassword
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Added GoogleAuthProvider, signInWithPopup
         import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
         // Import Supabase Client
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -484,6 +491,7 @@
         const signupButton = document.getElementById('signup-button');
         const loginButton = document.getElementById('login-button');
         const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
+        const googleSignInButton = document.getElementById('google-signin-button'); // NEW
         const logoutButton = document.getElementById('logout-button');
         const authStatusDiv = document.getElementById('auth-status');
         const createTextSection = document.getElementById('create-text-section');
@@ -579,6 +587,22 @@
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging in: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // NEW: Google Sign-In functionality
+        googleSignInButton.addEventListener('click', async () => {
+            showLoading();
+            const provider = new GoogleAuthProvider();
+            try {
+                const userCredential = await signInWithPopup(auth, provider);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully logged in with Google as ${userCredential.user.email}`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error signing in with Google: ${error.message}`;
             } finally {
                 hideLoading();
             }
@@ -732,6 +756,7 @@
                 signupButton.classList.add('hidden');
                 loginButton.classList.add('hidden');
                 forgotPasswordButton.classList.add('hidden');
+                googleSignInButton.classList.add('hidden'); // Hide Google sign-in when logged in
                 openAccountManagementButton.classList.remove('hidden');
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
@@ -739,6 +764,7 @@
                 signupButton.classList.remove('hidden');
                 loginButton.classList.remove('hidden');
                 forgotPasswordButton.classList.remove('hidden');
+                googleSignInButton.classList.remove('hidden'); // Show Google sign-in when logged out
             }
             authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
             authStatusDiv.className = currentUser ? 'success' : '';
