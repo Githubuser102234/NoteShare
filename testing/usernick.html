@@ -358,21 +358,21 @@
 
         <div id="account-management" class="hidden">
             <h3>Account Settings</h3>
-            <p><strong>Current Username:</strong> <span id="current-username-display"></span></p>
-            <p><strong>Next Username Change:</strong> <span id="next-username-change-display"></span></p>
-            <label for="new-username">New Username:</label>
-            <input type="text" id="new-username" placeholder="Enter new username">
-            <button id="update-username-button">Update Username</button>
-            <p><strong>Current Nickname:</strong> <span id="current-nickname-display"></span></p>
-            <label for="new-nickname">New Nickname (Optional):</label>
-            <input type="text" id="new-nickname" placeholder="Enter new nickname">
-            <button id="update-nickname-button">Update Nickname</button>
             <label for="new-email">New Email:</label>
             <input type="email" id="new-email" placeholder="Enter new email">
             <button id="update-email-button">Update Email</button>
             <label for="new-password">New Password:</label>
             <input type="password" id="new-password" placeholder="Enter new password">
             <button id="update-password-button">Update Password</button>
+
+            <label for="new-username">Username:</label>
+            <input type="text" id="new-username" placeholder="Enter new username">
+            <button id="update-username-button">Change Username</button>
+            <p id="username-cooldown-message" style="font-size: 0.8em; color: #666;"></p>
+
+            <label for="new-nickname">Optional Nickname:</label>
+            <input type="text" id="new-nickname" placeholder="Enter optional nickname">
+            <button id="update-nickname-button">Update Nickname</button>
             <div id="account-management-status"></div>
             <button id="close-account-management" style="background-color: #6c757d;">Close</button>
         </div>
@@ -380,8 +380,9 @@
 
         <div id="auth-section">
             <h2>Sign Up / Log In</h2>
+            <input type="text" id="username" placeholder="Username (required)" required>
             <input type="email" id="email" placeholder="Email" required>
-            <input type="text" id="username" placeholder="Username (required for signup)" required> <input type="password" id="password" placeholder="Password" required>
+            <input type="password" id="password" placeholder="Password" required>
             <button id="signup-button">Sign Up</button>
             <button id="login-button">Log In</button>
             <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
@@ -415,6 +416,7 @@
             <h2>Viewing Shared Text</h2>
             <h3 id="public-text-title"></h3>
             <span id="public-text-timestamp" class="text-timestamp"></span>
+            <p id="public-text-author" style="font-size: 0.9em; color: #555; margin-bottom: 10px;"></p>
             <pre id="public-text-content"></pre>
             <div id="public-text-images"></div>
             <div id="public-text-actions">
@@ -451,7 +453,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
         // Import Timestamp from Firestore to store dates correctly
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Added GoogleAuthProvider, signInWithPopup
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, updateProfile, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Added GoogleAuthProvider, signInWithPopup, updateProfile
         import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js"; // Added setDoc
         // Import Supabase Client
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
@@ -461,7 +463,7 @@
             apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
             authDomain: "noteshare-c6815.firebaseapp.com",
             projectId: "noteshare-c6815",
-            storageBucket: "noteshare-c6815.firebase.appspot.com", // Corrected storageBucket
+            storageBucket: "noteshare-c6815.firebaseapp.com", // Corrected storageBucket
             messagingSenderId: "193971626161",
             appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
             measurementId: "G-5YWVLKRVRT"
@@ -480,8 +482,8 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // Get DOM elements
+        const usernameInput = document.getElementById('username'); // NEW
         const emailInput = document.getElementById('email');
-        const usernameInput = document.getElementById('username'); // New
         const passwordInput = document.getElementById('password');
         const signupButton = document.getElementById('signup-button');
         const loginButton = document.getElementById('login-button');
@@ -501,6 +503,7 @@
         const publicTextViewSection = document.getElementById('public-text-view');
         const publicTextTitle = document.getElementById('public-text-title');
         const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
+        const publicTextAuthor = document.getElementById('public-text-author'); // NEW
         const publicTextContent = document.getElementById('public-text-content');
         const publicTextImagesDiv = document.getElementById('public-text-images'); // New
         const publicDownloadButton = document.getElementById('public-download-button');
@@ -535,14 +538,11 @@
         const updateEmailButton = document.getElementById('update-email-button');
         const updatePasswordButton = document.getElementById('update-password-button');
         const accountManagementStatusDiv = document.getElementById('account-management-status');
-        const newUsernameInput = document.getElementById('new-username'); // New
-        const updateUsernameButton = document.getElementById('update-username-button'); // New
-        const currentUsernameDisplay = document.getElementById('current-username-display'); // New
-        const nextUsernameChangeDisplay = document.getElementById('next-username-change-display'); // New
-        const newNicknameInput = document.getElementById('new-nickname'); // New
-        const updateNicknameButton = document.getElementById('update-nickname-button'); // New
-        const currentNicknameDisplay = document.getElementById('current-nickname-display'); // New
-
+        const newUsernameInput = document.getElementById('new-username'); // NEW
+        const updateUsernameButton = document.getElementById('update-username-button'); // NEW
+        const usernameCooldownMessage = document.getElementById('username-cooldown-message'); // NEW
+        const newNicknameInput = document.getElementById('new-nickname'); // NEW
+        const updateNicknameButton = document.getElementById('update-nickname-button'); // NEW
 
         // Loading Overlay Element
         const loadingOverlay = document.getElementById('loading-overlay');
@@ -565,9 +565,9 @@
 
         signupButton.addEventListener('click', async () => {
             showLoading();
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
-            const username = usernameInput.value.trim();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            const username = usernameInput.value.trim(); // Get username
 
             if (!username) {
                 authStatusDiv.className = 'error';
@@ -577,29 +577,23 @@
             }
 
             try {
-                // Check if username already exists
-                const q = query(collection(db, "users"), where("username", "==", username));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    authStatusDiv.className = 'error';
-                    authStatusDiv.textContent = 'Username already taken. Please choose another.';
-                    hideLoading();
-                    return;
-                }
-
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const user = userCredential.user;
+                currentUser = userCredential.user; // Set currentUser immediately after creation
 
-                // Create user profile in Firestore
-                await setDoc(doc(db, "users", user.uid), {
-                    email: user.email,
+                // Store username in Firestore for the new user
+                await setDoc(doc(db, "users", currentUser.uid), {
                     username: username,
-                    nickname: '', // Optional nickname, empty by default
-                    usernameLastChanged: Timestamp.now()
+                    nickname: '', // Initialize nickname as empty
+                    lastUsernameChange: Timestamp.now() // Record initial username set time
                 });
 
+                // Update Firebase Auth profile (displayName for username)
+                await updateProfile(currentUser, { displayName: username });
+
+
                 authStatusDiv.className = 'success';
-                authStatusDiv.textContent = `Successfully signed up and logged in as ${user.email}`;
+                authStatusDiv.textContent = `Successfully signed up and logged in as ${userCredential.user.email} (Username: ${username}).`;
+                displayMainUI(); // Refresh UI to show logged-in state
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error signing up: ${error.message}`;
@@ -610,12 +604,14 @@
 
         loginButton.addEventListener('click', async () => {
             showLoading();
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim();
+            const email = emailInput.value;
+            const password = passwordInput.value;
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                currentUser = userCredential.user; // Set currentUser
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = `Successfully logged in as ${userCredential.user.email}`;
+                displayMainUI(); // Refresh UI to show logged-in state
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging in: ${error.message}`;
@@ -630,37 +626,22 @@
             const provider = new GoogleAuthProvider();
             try {
                 const userCredential = await signInWithPopup(auth, provider);
-                const user = userCredential.user;
+                currentUser = userCredential.user; // Set currentUser
 
-                // Check if user profile already exists, if not, create one with a default username
-                const userDocRef = doc(db, "users", user.uid);
+                // Check if user document exists in Firestore, if not create it with default username/nickname
+                const userDocRef = doc(db, "users", currentUser.uid);
                 const userDocSnap = await getDoc(userDocRef);
 
                 if (!userDocSnap.exists()) {
-                    let defaultUsername = user.email.split('@')[0];
-                    let usernameCounter = 1;
-                    let uniqueUsername = defaultUsername;
-
-                    // Ensure unique username for Google sign-ins
-                    while (true) {
-                        const q = query(collection(db, "users"), where("username", "==", uniqueUsername));
-                        const querySnapshot = await getDocs(q);
-                        if (querySnapshot.empty) {
-                            break;
-                        }
-                        uniqueUsername = `${defaultUsername}${usernameCounter++}`;
-                    }
-
                     await setDoc(userDocRef, {
-                        email: user.email,
-                        username: uniqueUsername,
+                        username: currentUser.displayName || `user_${currentUser.uid.substring(0, 8)}`, // Use Google DisplayName or generated
                         nickname: '',
-                        usernameLastChanged: Timestamp.now()
+                        lastUsernameChange: Timestamp.now()
                     });
                 }
-
                 authStatusDiv.className = 'success';
-                authStatusDiv.textContent = `Successfully logged in with Google as ${user.email}`;
+                authStatusDiv.textContent = `Successfully logged in with Google as ${currentUser.email}`;
+                displayMainUI(); // Refresh UI to show logged-in state
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error signing in with Google: ${error.message}`;
@@ -672,7 +653,7 @@
         // New: Forgot Password functionality
         forgotPasswordButton.addEventListener('click', async () => {
             showLoading();
-            const email = emailInput.value.trim();
+            const email = emailInput.value;
             if (!email) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = 'Please enter your email to reset password.';
@@ -700,7 +681,6 @@
                 displayMainUI(); // Go back to default UI state
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = 'Successfully logged out.';
-                currentUser = null; // Clear currentUser on logout
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging out: ${error.message}`;
@@ -711,48 +691,45 @@
 
         // --- Account Management Functions ---
         openAccountManagementButton.addEventListener('click', async () => { // Made async to fetch user data
-            if (currentUser && currentUser.uid) {
+            if (currentUser) {
                 accountManagementSection.classList.remove('hidden');
+                newEmailInput.value = currentUser.email;
+                newPasswordInput.value = '';
                 accountManagementStatusDiv.textContent = ''; // Clear status
-                newPasswordInput.value = ''; // Clear password input
 
-                // Fetch and display current user data
-                showLoading();
-                try {
-                    const userDocRef = doc(db, "users", currentUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-                    if (userDocSnap.exists()) {
-                        const userData = userDocSnap.data();
-                        currentUsernameDisplay.textContent = userData.username || 'Not set';
-                        currentNicknameDisplay.textContent = userData.nickname || 'None';
-                        newEmailInput.value = currentUser.email; // Pre-fill current email
-                        newUsernameInput.value = userData.username || '';
-                        newNicknameInput.value = userData.nickname || '';
+                // Fetch username and nickname from Firestore
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                if (userDocSnap.exists()) {
+                    const userData = userDocSnap.data();
+                    newUsernameInput.value = userData.username || '';
+                    newNicknameInput.value = userData.nickname || '';
 
-                        const usernameLastChanged = userData.usernameLastChanged ? userData.usernameLastChanged.toDate() : new Date(0); // Default to epoch if not set
-                        const nextChangeDate = new Date(usernameLastChanged.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
-                        const now = new Date();
+                    // Check username change cooldown
+                    const lastChangeTimestamp = userData.lastUsernameChange ? userData.lastUsernameChange.toDate() : new Date(0);
+                    const now = new Date();
+                    const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+                    const timeElapsed = now.getTime() - lastChangeTimestamp.getTime();
 
-                        if (now < nextChangeDate) {
-                            nextUsernameChangeDisplay.textContent = `on ${nextChangeDate.toLocaleDateString()} at ${nextChangeDate.toLocaleTimeString()}`;
-                            updateUsernameButton.disabled = true;
-                        } else {
-                            nextUsernameChangeDisplay.textContent = 'Anytime';
-                            updateUsernameButton.disabled = false;
-                        }
-
+                    if (timeElapsed < sevenDaysInMs) {
+                        updateUsernameButton.disabled = true;
+                        const remainingTimeMs = sevenDaysInMs - timeElapsed;
+                        const remainingDays = Math.ceil(remainingTimeMs / (1000 * 60 * 60 * 24));
+                        usernameCooldownMessage.textContent = `Username can be changed again in ${remainingDays} days.`;
+                        usernameCooldownMessage.style.color = 'orange';
                     } else {
-                        currentUsernameDisplay.textContent = 'Error loading';
-                        currentNicknameDisplay.textContent = 'Error loading';
-                        nextUsernameChangeDisplay.textContent = 'N/A';
+                        updateUsernameButton.disabled = false;
+                        usernameCooldownMessage.textContent = 'You can change your username now.';
+                        usernameCooldownMessage.style.color = 'green';
                     }
-                } catch (error) {
-                    console.error("Error fetching user data for account management:", error);
-                    accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = 'Error loading account data.';
-                } finally {
-                    hideLoading();
+
+                } else {
+                    newUsernameInput.value = '';
+                    newNicknameInput.value = '';
+                    usernameCooldownMessage.textContent = 'User data not found. Please log out and back in.';
+                    updateUsernameButton.disabled = true;
                 }
+
             } else {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = 'Please log in to manage your account.';
@@ -782,14 +759,10 @@
 
             try {
                 await updateEmail(currentUser, newEmail);
-                // Also update in user's Firestore document
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    email: newEmail
-                });
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Email updated successfully! You might need to log in again.';
-                // currentUser.email = newEmail; // Not directly settable, will be updated on next onAuthStateChanged
-                authStatusDiv.textContent = `Logged in as: ${newEmail}`; // Optimistic update
+                currentUser.email = newEmail;
+                authStatusDiv.textContent = `Logged in as: ${currentUser.email}`;
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating email: ${error.message}. You might need to log in again.`;
@@ -854,51 +827,42 @@
                 return;
             }
 
-            try {
-                const userDocRef = doc(db, "users", currentUser.uid);
-                const userDocSnap = await getDoc(userDocRef);
+            // Check cooldown again to prevent race conditions (client-side simulation)
+            const userDocRef = doc(db, "users", currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            if (userDocSnap.exists()) {
                 const userData = userDocSnap.data();
-                const usernameLastChanged = userData.usernameLastChanged ? userData.usernameLastChanged.toDate() : new Date(0);
-                const nextChangeDate = new Date(usernameLastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const lastChangeTimestamp = userData.lastUsernameChange ? userData.lastUsernameChange.toDate() : new Date(0);
                 const now = new Date();
+                const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
+                const timeElapsed = now.getTime() - lastChangeTimestamp.getTime();
 
-                if (now < nextChangeDate) {
+                if (timeElapsed < sevenDaysInMs) {
                     accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = `You can only change your username every 7 days. Next change available on ${nextChangeDate.toLocaleDateString()} at ${nextChangeDate.toLocaleTimeString()}.`;
+                    accountManagementStatusDiv.textContent = 'You can only change your username every 7 days.';
                     hideLoading();
                     return;
                 }
+            } else {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'User data not found. Cannot update username.';
+                hideLoading();
+                return;
+            }
 
-                if (newUsername === userData.username) {
-                     accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = 'New username is the same as current username.';
-                    hideLoading();
-                    return;
-                }
-
-
-                // Check if new username is unique
-                const q = query(collection(db, "users"), where("username", "==", newUsername));
-                const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty) {
-                    accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = 'Username already taken. Please choose another.';
-                    hideLoading();
-                    return;
-                }
-
+            try {
+                // Update username in Firestore
                 await updateDoc(userDocRef, {
                     username: newUsername,
-                    usernameLastChanged: Timestamp.now()
+                    lastUsernameChange: Timestamp.now()
                 });
+                // Update Firebase Auth profile (displayName)
+                await updateProfile(currentUser, { displayName: newUsername });
+
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Username updated successfully!';
-                currentUsernameDisplay.textContent = newUsername; // Update display immediately
-                currentUser.username = newUsername; // Update local currentUser object
-                // Recalculate and display next change date
-                const updatedNextChangeDate = new Date(Timestamp.now().toDate().getTime() + 7 * 24 * 60 * 60 * 1000);
-                nextUsernameChangeDisplay.textContent = `on ${updatedNextChangeDate.toLocaleDateString()} at ${updatedNextChangeDate.toLocaleTimeString()}`;
-                updateUsernameButton.disabled = true; // Disable button after change
+                // Re-run the cooldown check to update message/button state
+                openAccountManagementButton.click(); // Re-open to refresh status
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating username: ${error.message}`;
@@ -921,14 +885,14 @@
             const newNickname = newNicknameInput.value.trim();
 
             try {
+                // Update nickname in Firestore
                 const userDocRef = doc(db, "users", currentUser.uid);
                 await updateDoc(userDocRef, {
                     nickname: newNickname
                 });
+
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Nickname updated successfully!';
-                currentNicknameDisplay.textContent = newNickname || 'None'; // Update display
-                currentUser.nickname = newNickname; // Update local currentUser object
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating nickname: ${error.message}`;
@@ -959,7 +923,7 @@
                 logoutButton.classList.remove('hidden');
                 signupButton.classList.add('hidden');
                 loginButton.classList.add('hidden');
-                usernameInput.classList.add('hidden'); // Hide username input after login
+                usernameInput.classList.add('hidden'); // Hide username input on login
                 forgotPasswordButton.classList.add('hidden');
                 googleSignInButton.classList.add('hidden'); // Hide Google sign-in when logged in
                 openAccountManagementButton.classList.remove('hidden');
@@ -968,7 +932,7 @@
                 logoutButton.classList.add('hidden');
                 signupButton.classList.remove('hidden');
                 loginButton.classList.remove('hidden');
-                usernameInput.classList.remove('hidden'); // Show username input for signup
+                usernameInput.classList.remove('hidden'); // Show username input on logout
                 forgotPasswordButton.classList.remove('hidden');
                 googleSignInButton.classList.remove('hidden'); // Show Google sign-in when logged out
             }
@@ -982,37 +946,6 @@
             currentUser = user;
             showLoading(); // Show loading when auth state changes
             try {
-                if (currentUser) {
-                    // Fetch user's profile data (username, nickname, etc.) from Firestore
-                    const userDocRef = doc(db, "users", currentUser.uid);
-                    const userDocSnap = await getDoc(userDocRef);
-                    if (userDocSnap.exists()) {
-                        Object.assign(currentUser, userDocSnap.data()); // Merge Firestore data into currentUser object
-                    } else {
-                        // This case might happen for very old users or if something went wrong during signup.
-                        // Create a default user document if it doesn't exist (e.g., for Google sign-ins that didn't populate it)
-                        let defaultUsername = currentUser.email ? currentUser.email.split('@')[0] : currentUser.uid;
-                        let usernameCounter = 1;
-                        let uniqueUsername = defaultUsername;
-
-                        while (true) {
-                            const q = query(collection(db, "users"), where("username", "==", uniqueUsername));
-                            const querySnapshot = await getDocs(q);
-                            if (querySnapshot.empty) {
-                                break;
-                            }
-                            uniqueUsername = `${defaultUsername}${usernameCounter++}`;
-                        }
-                        await setDoc(userDocRef, {
-                            email: currentUser.email,
-                            username: uniqueUsername,
-                            nickname: '',
-                            usernameLastChanged: Timestamp.now()
-                        });
-                        Object.assign(currentUser, { username: uniqueUsername, nickname: '', usernameLastChanged: Timestamp.now() });
-                    }
-                }
-
                 const hash = window.location.hash;
                 if (hash && hash.startsWith('#text-')) {
                     const textId = hash.substring(6);
@@ -1025,12 +958,7 @@
                         sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
                     }
                 }
-            } catch(error) {
-                console.error("Error during authentication state change or initial load:", error);
-                authStatusDiv.className = 'error';
-                authStatusDiv.textContent = `Failed to load user data: ${error.message}`;
-            }
-            finally {
+            } finally {
                 hideLoading();
             }
         });
@@ -1159,6 +1087,17 @@
                 }
             }
 
+            // Fetch user's username and nickname for the note
+            const userDocRef = doc(db, "users", currentUser.uid);
+            const userDocSnap = await getDoc(userDocRef);
+            let usernameForNote = currentUser.displayName || 'Anonymous'; // Fallback to displayName or 'Anonymous'
+            let nicknameForNote = '';
+            if (userDocSnap.exists()) {
+                const userData = userDocSnap.data();
+                usernameForNote = userData.username || usernameForNote;
+                nicknameForNote = userData.nickname || '';
+            }
+
             try {
                 await addDoc(collection(db, "texts"), {
                     userId: currentUser.uid,
@@ -1168,7 +1107,9 @@
                     commentsDisabled: false,
                     commentsLocked: false,
                     isPublic: false,
-                    images: imageUrls
+                    images: imageUrls,
+                    username: usernameForNote, // Store username
+                    nickname: nicknameForNote // Store nickname
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = 'Text shared successfully!';
@@ -1229,6 +1170,17 @@
                         }
                     });
 
+                    // Construct author display
+                    let authorDisplay = '';
+                    if (textData.nickname) {
+                        authorDisplay = `By ${textData.nickname} (@${textData.username})`;
+                    } else if (textData.username) {
+                        authorDisplay = `By @${textData.username}`;
+                    } else {
+                        authorDisplay = `By ${textData.userEmail || 'Unknown'}`; // Fallback to email if no username
+                    }
+
+
                     const textItem = document.createElement('div');
                     textItem.className = 'text-item';
                     textItem.id = `text-${textId}`;
@@ -1236,6 +1188,7 @@
                     textItem.innerHTML = `
                         <h3><a href="#text-${textId}">${textData.title}</a></h3>
                         <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
+                        <p style="font-size: 0.9em; color: #555; margin-bottom: 10px;">${authorDisplay}</p>
                         <pre>${textData.content}</pre>
                         ${imageHtml}
                         <div class="actions">
@@ -1267,6 +1220,7 @@
             goBackButton.classList.remove('hidden');
             publicTextTitle.textContent = 'Loading...';
             publicTextTimestamp.textContent = '';
+            publicTextAuthor.textContent = ''; // Clear author
             publicTextContent.textContent = 'Loading text content...';
             publicTextImagesDiv.innerHTML = '';
             publicViewStatus.textContent = '';
@@ -1288,6 +1242,7 @@
                     if (!isPublic && !isOwner) {
                         publicTextTitle.textContent = 'Access Denied';
                         publicTextTimestamp.textContent = '';
+                        publicTextAuthor.textContent = '';
                         publicTextContent.textContent = 'This text is private and can only be viewed by its owner.';
                         publicTextImagesDiv.innerHTML = '';
                         publicViewStatus.className = 'error';
@@ -1308,8 +1263,32 @@
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
 
+                    // Fetch author's username and nickname for public display
+                    const authorUid = textData.userId;
+                    let authorUsername = textData.username || 'Unknown User';
+                    let authorNickname = textData.nickname || '';
+
+                    if (authorUid) {
+                        const authorDocRef = doc(db, "users", authorUid);
+                        const authorDocSnap = await getDoc(authorDocRef);
+                        if (authorDocSnap.exists()) {
+                            const authorData = authorDocSnap.data();
+                            authorUsername = authorData.username || authorUsername;
+                            authorNickname = authorData.nickname || authorNickname;
+                        }
+                    }
+
+                    let publicAuthorDisplay = '';
+                    if (authorNickname) {
+                        publicAuthorDisplay = `By ${authorNickname} (@${authorUsername})`;
+                    } else {
+                        publicAuthorDisplay = `By @${authorUsername}`;
+                    }
+
+
                     publicTextTitle.textContent = textData.title;
                     publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`;
+                    publicTextAuthor.textContent = publicAuthorDisplay; // Set author display
                     publicTextContent.textContent = textData.content;
                     currentViewedText = {
                         title: textData.title,
@@ -1372,6 +1351,7 @@
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
                     publicTextTimestamp.textContent = '';
+                    publicTextAuthor.textContent = '';
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicTextImagesDiv.innerHTML = '';
                     publicViewStatus.className = 'error';
@@ -1389,6 +1369,7 @@
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
                 publicTextTimestamp.textContent = '';
+                publicTextAuthor.textContent = '';
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicTextImagesDiv.innerHTML = '';
                 publicViewStatus.className = 'error';
@@ -1421,45 +1402,35 @@
                     return;
                 }
 
-                const userPromises = {}; // Cache for user data to avoid redundant fetches
-
                 for (const docSnap of querySnapshot.docs) {
                     const commentData = docSnap.data();
                     const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
                     const formattedDate = date.toLocaleString();
-                    const commentUserId = commentData.userId;
 
-                    let authorDisplay = 'Anonymous';
-
-                    if (commentUserId) {
-                        if (!userPromises[commentUserId]) {
-                            userPromises[commentUserId] = getDoc(doc(db, "users", commentUserId));
-                        }
-                        const userDocSnap = await userPromises[commentUserId];
-
-                        if (userDocSnap.exists()) {
-                            const userData = userDocSnap.data();
-                            const username = userData.username;
-                            const nickname = userData.nickname;
-                            if (nickname) {
-                                authorDisplay = `${nickname} (@${username})`;
-                            } else if (username) {
-                                authorDisplay = `@${username}`;
+                    // Fetch commenter's username and nickname
+                    let commenterDisplay = '';
+                    if (commentData.userId) {
+                        const commenterDocRef = doc(db, "users", commentData.userId);
+                        const commenterDocSnap = await getDoc(commenterDocRef);
+                        if (commenterDocSnap.exists()) {
+                            const commenterData = commenterDocSnap.data();
+                            if (commenterData.nickname) {
+                                commenterDisplay = `${commenterData.nickname} (@${commenterData.username})`;
                             } else {
-                                authorDisplay = userData.email || 'Anonymous'; // Fallback to email
+                                commenterDisplay = `@${commenterData.username}`;
                             }
                         } else {
-                            authorDisplay = commentData.userEmail || 'Anonymous'; // Fallback to stored email if user doc not found
+                            commenterDisplay = `(@${commentData.userEmail || 'Anonymous'})`; // Fallback
                         }
-                    } else if (commentData.userEmail) { // Fallback for old comments or if userId is missing
-                         authorDisplay = commentData.userEmail;
+                    } else {
+                         commenterDisplay = `(@${commentData.userEmail || 'Anonymous'})`; // Fallback for old comments or if userId is missing
                     }
 
 
                     const commentItem = document.createElement('div');
                     commentItem.className = 'comment-item';
                     commentItem.innerHTML = `
-                        <span class="comment-author">${authorDisplay}</span>
+                        <span class="comment-author">${commenterDisplay}</span>
                         <p>${commentData.content}</p>
                         <span class="comment-timestamp">${formattedDate}</span>
                     `;
@@ -1502,13 +1473,10 @@
             }
 
             try {
-                // Use the username and nickname from the currentUser object
                 await addDoc(collection(db, "comments"), {
                     textId: currentViewedText.id,
                     userId: currentUser.uid,
-                    userEmail: currentUser.email, // Keep for fallback/reference
-                    username: currentUser.username, // Store username at time of comment
-                    nickname: currentUser.nickname, // Store nickname at time of comment
+                    userEmail: currentUser.email, // Keep for fallback, but username/nickname is preferred
                     content: commentContent,
                     timestamp: Timestamp.now()
                 });
