@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="TextShare">
-    <link rel="apple-touch-icon" href="icon.png">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TextShare">
+<link rel="apple-touch-icon" href="icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TextShare</title>
@@ -22,14 +22,14 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            position: relative;
+            position: relative; /* Added for absolute positioning of account management */
         }
         h1, h2 {
             color: #0056b3;
         }
         input[type="email"],
         input[type="password"],
-        input[type="text"], /* Added for username/nickname inputs */
+        input[type="text"], /* Added for username/nickname */
         textarea {
             width: calc(100% - 22px);
             padding: 10px;
@@ -45,14 +45,14 @@
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            margin-right: 10px; /* Added for spacing between buttons */
+            margin-bottom: 10px; /* Added for spacing below buttons */
         }
         button:hover {
             background-color: #0056b3;
         }
         .forgot-password-button {
-            background-color: #6c757d;
+            background-color: #6c757d; /* A different color for distinction */
             font-size: 0.9em;
             padding: 8px 12px;
             margin-top: 5px;
@@ -60,16 +60,16 @@
         .forgot-password-button:hover {
             background-color: #5a6268;
         }
-        #auth-status, #message, #public-view-status, #account-management-status {
+        #auth-status, #message, #public-view-status, #account-management-status { /* Added #account-management-status */
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
         }
-        #auth-status.success, #public-view-status.success, .copy-status.success, #account-management-status.success {
+        #auth-status.success, #public-view-status.success, .copy-status.success, #account-management-status.success { /* Added #account-management-status */
             background-color: #d4edda;
             color: #155724;
         }
-        #auth-status.error, #public-view-status.error, .copy-status.error, #account-management-status.error {
+        #auth-status.error, #public-view-status.error, .copy-status.error, #account-management-status.error { /* Added #account-management-status */
             background-color: #f8d7da;
             color: #721c24;
         }
@@ -108,7 +108,7 @@
             margin-top: 10px;
         }
         .hidden {
-            display: none !important;
+            display: none !important; /* Use !important to ensure override */
         }
         #public-text-view {
             margin-top: 30px;
@@ -134,12 +134,14 @@
             margin-right: 10px;
             margin-top: 15px;
         }
+        /* New style for timestamp */
         .text-timestamp {
             font-size: 0.85em;
             color: #666;
             margin-bottom: 10px;
-            display: block;
+            display: block; /* Ensures it takes full width */
         }
+        /* New styles for comments */
         .comments-section {
             margin-top: 30px;
             border-top: 1px solid #eee;
@@ -153,7 +155,7 @@
             border-radius: 4px;
         }
         .comment-item {
-            background-color: #f0f8ff;
+            background-color: #f0f8ff; /* Light blue for comments */
             border: 1px solid #d0e8ff;
             padding: 10px;
             margin-bottom: 10px;
@@ -174,24 +176,27 @@
         }
         .comments-status {
             font-style: italic;
-            color: #d9534f;
+            color: #d9534f; /* Reddish for warning/status */
             margin-bottom: 10px;
         }
         .toggle-button.active {
-            background-color: #28a745;
+            background-color: #28a745; /* Green for active/enabled */
         }
+        /* Style for Make Public/Private buttons */
         .public-toggle-button {
-            background-color: #17a2b8;
+            background-color: #17a2b8; /* Info blue */
         }
         .public-toggle-button:hover {
             background-color: #138496;
         }
         .public-toggle-button.private {
-            background-color: #dc3545;
+            background-color: #dc3545; /* Danger red */
         }
         .public-toggle-button.private:hover {
             background-color: #c82333;
         }
+
+        /* New styles for image previews */
         #image-previews {
             display: flex;
             flex-wrap: wrap;
@@ -207,7 +212,7 @@
             background-color: #f0f0f0;
         }
         .image-preview-item img,
-        .image-preview-item video {
+        .image-preview-item video { /* Added video to preview item styling */
             max-width: 100px;
             max-height: 100px;
             display: block;
@@ -239,8 +244,9 @@
             border-radius: 4px;
             border: 1px solid #ddd;
         }
+        /* Style for the "NEW" indicator */
         .new-indicator {
-            background-color: #007bff;
+            background-color: #007bff; /* Blue background */
             color: white;
             font-size: 0.7em;
             padding: 2px 6px;
@@ -249,74 +255,89 @@
             vertical-align: middle;
             font-weight: bold;
         }
+
+        /* New styles for account management section */
         #account-management {
             position: absolute;
-            top: 20px;
-            right: 20px;
-            background-color: #e9ecef;
+            top: 20px; /* Adjust as needed */
+            right: 20px; /* Adjust as needed */
+            background-color: #e9ecef; /* Light gray background */
             padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            width: 250px;
-            z-index: 1000;
+            width: 250px; /* Fixed width for the panel */
+            z-index: 1000; /* Ensure it stays on top */
         }
+
         #account-management h3 {
             margin-top: 0;
             margin-bottom: 10px;
             color: #0056b3;
             font-size: 1.1em;
         }
-        #account-management input {
-            width: calc(100% - 20px);
+
+        #account-management input[type="email"],
+        #account-management input[type="password"],
+        #account-management input[type="text"] { /* Added for username/nickname */
+            width: calc(100% - 20px); /* Adjust width for padding */
             font-size: 0.9em;
         }
+
         #account-management button {
             width: 100%;
             margin-right: 0;
             margin-bottom: 5px;
             font-size: 0.95em;
         }
+
+        /* Bouncing Dots Loader Styles */
         #loading-overlay {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.8); /* Dark background */
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
+            z-index: 9999; /* Ensure it's on top of everything */
         }
+
         .loader {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
+            gap: 8px; /* Space between dots */
         }
+
         .dot {
             width: 15px;
             height: 15px;
-            background-color: #2196F3;
+            background-color: #2196F3; /* Blue dots */
             border-radius: 50%;
-            animation: bounce 0.8s infinite alternate;
+            animation: bounce 0.8s infinite alternate; /* Animation properties */
         }
+
         .dot:nth-child(2) {
-            animation-delay: 0.2s;
+            animation-delay: 0.2s; /* Stagger animation for the second dot */
         }
+
         .dot:nth-child(3) {
-            animation-delay: 0.4s;
+            animation-delay: 0.4s; /* Stagger animation for the third dot */
         }
+
         @keyframes bounce {
             0% {
                 transform: translateY(0);
             }
             100% {
-                transform: translateY(-20px);
+                transform: translateY(-20px); /* How high the dots bounce */
             }
         }
+        /* New style for Google Sign-In button */
         .google-signin-button {
-            background-color: #db4437;
+            background-color: #db4437; /* Google Red */
         }
         .google-signin-button:hover {
             background-color: #c23321;
@@ -337,22 +358,21 @@
 
         <div id="account-management" class="hidden">
             <h3>Account Settings</h3>
+            <p><strong>Current Username:</strong> <span id="current-username-display"></span></p>
+            <p><strong>Next Username Change:</strong> <span id="next-username-change-display"></span></p>
+            <label for="new-username">New Username:</label>
+            <input type="text" id="new-username" placeholder="Enter new username">
+            <button id="update-username-button">Update Username</button>
+            <p><strong>Current Nickname:</strong> <span id="current-nickname-display"></span></p>
+            <label for="new-nickname">New Nickname (Optional):</label>
+            <input type="text" id="new-nickname" placeholder="Enter new nickname">
+            <button id="update-nickname-button">Update Nickname</button>
             <label for="new-email">New Email:</label>
             <input type="email" id="new-email" placeholder="Enter new email">
             <button id="update-email-button">Update Email</button>
             <label for="new-password">New Password:</label>
             <input type="password" id="new-password" placeholder="Enter new password">
             <button id="update-password-button">Update Password</button>
-
-            <label for="username">Username:</label>
-            <input type="text" id="username" placeholder="Enter username">
-            <button id="update-username-button">Update Username</button>
-            <p style="font-size: 0.8em; color: #666;">Username can be changed every 7 days.</p>
-
-            <label for="nickname">Nickname (Optional):</label>
-            <input type="text" id="nickname" placeholder="Enter nickname">
-            <button id="update-nickname-button">Update Nickname</button>
-
             <div id="account-management-status"></div>
             <button id="close-account-management" style="background-color: #6c757d;">Close</button>
         </div>
@@ -361,15 +381,12 @@
         <div id="auth-section">
             <h2>Sign Up / Log In</h2>
             <input type="email" id="email" placeholder="Email" required>
-            <input type="text" id="signup-username" placeholder="Username (Required)" required>
-            <input type="password" id="password" placeholder="Password" required>
+            <input type="text" id="username" placeholder="Username (required for signup)" required> <input type="password" id="password" placeholder="Password" required>
             <button id="signup-button">Sign Up</button>
             <button id="login-button">Log In</button>
             <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
-            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button>
-            <button id="logout-button" class="hidden">Log Out</button>
-            <button id="open-account-management" class="hidden">Account Management</button>
-            <div id="auth-status"></div>
+            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button> <button id="logout-button" class="hidden">Log Out</button>
+            <button id="open-account-management" class="hidden">Account Management</button> <div id="auth-status"></div>
         </div>
 
         <hr>
@@ -397,7 +414,6 @@
         <div id="public-text-view" class="hidden">
             <h2>Viewing Shared Text</h2>
             <h3 id="public-text-title"></h3>
-            <span id="public-text-author"></span><br>
             <span id="public-text-timestamp" class="text-timestamp"></span>
             <pre id="public-text-content"></pre>
             <div id="public-text-images"></div>
@@ -431,38 +447,46 @@
     </div>
 
     <script type="module">
+        // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        // Import Timestamp from Firestore to store dates correctly
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js"; // Added GoogleAuthProvider, signInWithPopup
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js"; // Added setDoc
+        // Import Supabase Client
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
             authDomain: "noteshare-c6815.firebaseapp.com",
             projectId: "noteshare-c6815",
-            storageBucket: "noteshare-c6815.firebaseapp.com",
+            storageBucket: "noteshare-c6815.firebase.appspot.com", // Corrected storageBucket
             messagingSenderId: "193971626161",
             appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
             measurementId: "G-5YWVLKRVRT"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
+        // Initialize Supabase - ONLY FOR IMAGES AND VIDEOS
         const SUPABASE_URL = 'https://pjscnnquqnofhyvkzhep.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2NubnF1cW5vZmh5dmt6aGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMjQyOTgsImexb20iOjIwNjgwMDc2OTl9.zN4Jt9_B8w_D_Q-Y6oB_p4_C_l3n_E-B8qX9qQ9_B4'; // Updated key
+        // Placeholder for your Supabase Anon Key - Replace with your actual key
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2NubnF1cW5vZmh5dmt6aGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMjQyOTgsImV4cCI6MjA2ODgwMDI5OH0.X69NiqMWcUbNPbVZzy8QwTmqGSI1jNvfMiAiuk6LeYQ';
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // Get DOM elements
         const emailInput = document.getElementById('email');
-        const signupUsernameInput = document.getElementById('signup-username'); // New
+        const usernameInput = document.getElementById('username'); // New
         const passwordInput = document.getElementById('password');
         const signupButton = document.getElementById('signup-button');
         const loginButton = document.getElementById('login-button');
-        const forgotPasswordButton = document.getElementById('forgot-password-button');
-        const googleSignInButton = document.getElementById('google-signin-button');
+        const forgotPasswordButton = document.getElementById('forgot-password-button'); // New
+        const googleSignInButton = document.getElementById('google-signin-button'); // NEW
         const logoutButton = document.getElementById('logout-button');
         const authStatusDiv = document.getElementById('auth-status');
         const createTextSection = document.getElementById('create-text-section');
@@ -473,33 +497,36 @@
         const messageDiv = document.getElementById('message');
         const sharedTextsDiv = document.getElementById('shared-texts');
 
+        // New elements for public view
         const publicTextViewSection = document.getElementById('public-text-view');
         const publicTextTitle = document.getElementById('public-text-title');
-        const publicTextAuthor = document.getElementById('public-text-author'); // New
-        const publicTextTimestamp = document.getElementById('public-text-timestamp');
+        const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
         const publicTextContent = document.getElementById('public-text-content');
-        const publicTextImagesDiv = document.getElementById('public-text-images');
+        const publicTextImagesDiv = document.getElementById('public-text-images'); // New
         const publicDownloadButton = document.getElementById('public-download-button');
         const publicRawButton = document.getElementById('public-raw-button');
         const publicCopyLinkButton = document.getElementById('public-copy-link-button');
-        const publicShareButton = document.getElementById('public-share-button');
-        const reportButton = document.getElementById('report-button');
+        const publicShareButton = document.getElementById('public-share-button'); // NEW SHARE BUTTON
+        const reportButton = document.getElementById('report-button'); // NEW REPORT BUTTON
         const publicCopyStatus = document.getElementById('public-copy-status');
         const publicViewStatus = document.getElementById('public-view-status');
-        const goBackButton = document.getElementById('go-back-button');
+        const goBackButton = document.getElementById('go-back-button'); // New
 
+        // New elements for comments
         const commentsList = document.getElementById('comments-list');
         const commentInputArea = document.getElementById('comment-input-area');
         const newCommentContent = document.getElementById('new-comment-content');
         const postCommentButton = document.getElementById('post-comment-button');
         const commentMessage = document.getElementById('comment-message');
         const commentLoginPrompt = document.getElementById('comment-login-prompt');
-        const commentsStatusMessage = document.getElementById('comments-status-message');
+        const commentsStatusMessage = document.getElementById('comments-status-message'); // New
 
+        // New elements for image upload
         const imageUploadInput = document.getElementById('image-upload-input');
         const addImageButton = document.getElementById('add-image-button');
         const imagePreviewsDiv = document.getElementById('image-previews');
 
+        // New elements for Account Management
         const accountManagementSection = document.getElementById('account-management');
         const openAccountManagementButton = document.getElementById('open-account-management');
         const closeAccountManagementButton = document.getElementById('close-account-management');
@@ -507,18 +534,23 @@
         const newPasswordInput = document.getElementById('new-password');
         const updateEmailButton = document.getElementById('update-email-button');
         const updatePasswordButton = document.getElementById('update-password-button');
-        const usernameInput = document.getElementById('username'); // New
-        const nicknameInput = document.getElementById('nickname'); // New
-        const updateUsernameButton = document.getElementById('update-username-button'); // New
-        const updateNicknameButton = document.getElementById('update-nickname-button'); // New
         const accountManagementStatusDiv = document.getElementById('account-management-status');
+        const newUsernameInput = document.getElementById('new-username'); // New
+        const updateUsernameButton = document.getElementById('update-username-button'); // New
+        const currentUsernameDisplay = document.getElementById('current-username-display'); // New
+        const nextUsernameChangeDisplay = document.getElementById('next-username-change-display'); // New
+        const newNicknameInput = document.getElementById('new-nickname'); // New
+        const updateNicknameButton = document.getElementById('update-nickname-button'); // New
+        const currentNicknameDisplay = document.getElementById('current-nickname-display'); // New
 
+
+        // Loading Overlay Element
         const loadingOverlay = document.getElementById('loading-overlay');
 
-        let currentUser = null;
-        let currentViewedText = null;
-        let selectedFiles = [];
-        let currentUserData = null; // To store user's username, nickname, etc. from Firestore
+
+        let currentUser = null; // To store the current logged-in user
+        let currentViewedText = null; // To store text data for public view
+        let selectedFiles = []; // To store files selected for upload
 
         // --- Loading Overlay Functions ---
         function showLoading() {
@@ -529,74 +561,45 @@
             loadingOverlay.classList.add('hidden');
         }
 
-        // --- User Data Management in Firestore ---
-        async function getUserData(uid) {
-            if (!uid) return null;
-            const docRef = doc(db, "users", uid);
-            const docSnap = await getDoc(docRef);
-            return docSnap.exists() ? docSnap.data() : null;
-        }
-
-        async function updateUserData(uid, data) {
-            if (!uid) return;
-            const docRef = doc(db, "users", uid);
-            await setDoc(docRef, data, { merge: true });
-        }
-
-        function formatUserDisplay(userData) {
-            if (!userData) return "Anonymous";
-            const username = userData.username || userData.email || 'unknown_user';
-            const nickname = userData.nickname;
-            if (nickname) {
-                return `${nickname} (@${username})`;
-            }
-            return `@${username}`;
-        }
-
         // --- Authentication Functions ---
 
         signupButton.addEventListener('click', async () => {
             showLoading();
             const email = emailInput.value.trim();
-            const password = passwordInput.value;
-            const username = signupUsernameInput.value.trim(); // Get username for signup
+            const password = passwordInput.value.trim();
+            const username = usernameInput.value.trim();
 
-            if (!email || !password || !username) {
+            if (!username) {
                 authStatusDiv.className = 'error';
-                authStatusDiv.textContent = 'Please enter email, username, and password.';
-                hideLoading();
-                return;
-            }
-
-            // Check if username already exists
-            const q = query(collection(db, "users"), where("username", "==", username));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                authStatusDiv.className = 'error';
-                authStatusDiv.textContent = 'Username is already taken. Please choose another.';
+                authStatusDiv.textContent = 'Please enter a username.';
                 hideLoading();
                 return;
             }
 
             try {
+                // Check if username already exists
+                const q = query(collection(db, "users"), where("username", "==", username));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    authStatusDiv.className = 'error';
+                    authStatusDiv.textContent = 'Username already taken. Please choose another.';
+                    hideLoading();
+                    return;
+                }
+
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
 
-                // Save username to Firestore
-                await updateUserData(user.uid, {
+                // Create user profile in Firestore
+                await setDoc(doc(db, "users", user.uid), {
+                    email: user.email,
                     username: username,
-                    email: email,
-                    createdAt: Timestamp.now(),
-                    lastUsernameChange: Timestamp.now(), // Set initial change time
+                    nickname: '', // Optional nickname, empty by default
+                    usernameLastChanged: Timestamp.now()
                 });
 
                 authStatusDiv.className = 'success';
-                authStatusDiv.textContent = `Successfully signed up and logged in as ${email}`;
-                // Clear signup fields
-                emailInput.value = '';
-                passwordInput.value = '';
-                signupUsernameInput.value = '';
-
+                authStatusDiv.textContent = `Successfully signed up and logged in as ${user.email}`;
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error signing up: ${error.message}`;
@@ -607,8 +610,8 @@
 
         loginButton.addEventListener('click', async () => {
             showLoading();
-            const email = emailInput.value;
-            const password = passwordInput.value;
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 authStatusDiv.className = 'success';
@@ -621,6 +624,7 @@
             }
         });
 
+        // NEW: Google Sign-In functionality
         googleSignInButton.addEventListener('click', async () => {
             showLoading();
             const provider = new GoogleAuthProvider();
@@ -628,30 +632,30 @@
                 const userCredential = await signInWithPopup(auth, provider);
                 const user = userCredential.user;
 
-                // For Google Sign-in, we need to check if the user already exists in Firestore
-                // and if not, create a basic user entry. We can use a derived username initially.
-                const userData = await getUserData(user.uid);
-                if (!userData) {
-                    let defaultUsername = user.displayName ? user.displayName.replace(/\s+/g, '').toLowerCase() : user.email.split('@')[0];
-                    // Ensure uniqueness for derived username
-                    let usernameCounter = 0;
+                // Check if user profile already exists, if not, create one with a default username
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDoc(userDocRef);
+
+                if (!userDocSnap.exists()) {
+                    let defaultUsername = user.email.split('@')[0];
+                    let usernameCounter = 1;
                     let uniqueUsername = defaultUsername;
+
+                    // Ensure unique username for Google sign-ins
                     while (true) {
                         const q = query(collection(db, "users"), where("username", "==", uniqueUsername));
                         const querySnapshot = await getDocs(q);
                         if (querySnapshot.empty) {
                             break;
                         }
-                        usernameCounter++;
-                        uniqueUsername = `${defaultUsername}${usernameCounter}`;
+                        uniqueUsername = `${defaultUsername}${usernameCounter++}`;
                     }
 
-                    await updateUserData(user.uid, {
-                        username: uniqueUsername,
+                    await setDoc(userDocRef, {
                         email: user.email,
-                        createdAt: Timestamp.now(),
-                        lastUsernameChange: Timestamp.now(),
-                        nickname: user.displayName || ''
+                        username: uniqueUsername,
+                        nickname: '',
+                        usernameLastChanged: Timestamp.now()
                     });
                 }
 
@@ -665,13 +669,14 @@
             }
         });
 
+        // New: Forgot Password functionality
         forgotPasswordButton.addEventListener('click', async () => {
             showLoading();
-            const email = emailInput.value;
+            const email = emailInput.value.trim();
             if (!email) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = 'Please enter your email to reset password.';
-                hideLoading();
+                hideLoading(); // Hide loading if no email is provided
                 return;
             }
             try {
@@ -690,11 +695,12 @@
             showLoading();
             try {
                 await signOut(auth);
-                window.location.hash = '';
-                displayMainUI();
+                // When logged out, clear the hash and show the default (auth) view
+                window.location.hash = ''; // Remove hash
+                displayMainUI(); // Go back to default UI state
                 authStatusDiv.className = 'success';
                 authStatusDiv.textContent = 'Successfully logged out.';
-                currentUserData = null; // Clear user data on logout
+                currentUser = null; // Clear currentUser on logout
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging out: ${error.message}`;
@@ -704,44 +710,49 @@
         });
 
         // --- Account Management Functions ---
-        openAccountManagementButton.addEventListener('click', async () => {
-            if (currentUser) {
-                showLoading();
+        openAccountManagementButton.addEventListener('click', async () => { // Made async to fetch user data
+            if (currentUser && currentUser.uid) {
                 accountManagementSection.classList.remove('hidden');
-                newEmailInput.value = currentUser.email;
-                newPasswordInput.value = '';
-                accountManagementStatusDiv.textContent = '';
+                accountManagementStatusDiv.textContent = ''; // Clear status
+                newPasswordInput.value = ''; // Clear password input
 
-                currentUserData = await getUserData(currentUser.uid);
-                if (currentUserData) {
-                    usernameInput.value = currentUserData.username || '';
-                    nicknameInput.value = currentUserData.nickname || '';
+                // Fetch and display current user data
+                showLoading();
+                try {
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        const userData = userDocSnap.data();
+                        currentUsernameDisplay.textContent = userData.username || 'Not set';
+                        currentNicknameDisplay.textContent = userData.nickname || 'None';
+                        newEmailInput.value = currentUser.email; // Pre-fill current email
+                        newUsernameInput.value = userData.username || '';
+                        newNicknameInput.value = userData.nickname || '';
 
-                    // Check username cooldown
-                    const lastChangeTimestamp = currentUserData.lastUsernameChange;
-                    if (lastChangeTimestamp) {
-                        const lastChangeDate = lastChangeTimestamp.toDate();
-                        const sevenDaysLater = new Date(lastChangeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        const usernameLastChanged = userData.usernameLastChanged ? userData.usernameLastChanged.toDate() : new Date(0); // Default to epoch if not set
+                        const nextChangeDate = new Date(usernameLastChanged.getTime() + 7 * 24 * 60 * 60 * 1000); // 7 days in milliseconds
                         const now = new Date();
-                        if (now < sevenDaysLater) {
+
+                        if (now < nextChangeDate) {
+                            nextUsernameChangeDisplay.textContent = `on ${nextChangeDate.toLocaleDateString()} at ${nextChangeDate.toLocaleTimeString()}`;
                             updateUsernameButton.disabled = true;
-                            const timeLeft = sevenDaysLater.getTime() - now.getTime();
-                            const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-                            accountManagementStatusDiv.className = 'error';
-                            accountManagementStatusDiv.textContent = `Username can be changed again in ${daysLeft} days.`;
                         } else {
+                            nextUsernameChangeDisplay.textContent = 'Anytime';
                             updateUsernameButton.disabled = false;
-                            accountManagementStatusDiv.textContent = '';
                         }
+
                     } else {
-                        updateUsernameButton.disabled = false; // No previous change, allow change
+                        currentUsernameDisplay.textContent = 'Error loading';
+                        currentNicknameDisplay.textContent = 'Error loading';
+                        nextUsernameChangeDisplay.textContent = 'N/A';
                     }
-                } else {
-                    usernameInput.value = '';
-                    nicknameInput.value = '';
-                    updateUsernameButton.disabled = false;
+                } catch (error) {
+                    console.error("Error fetching user data for account management:", error);
+                    accountManagementStatusDiv.className = 'error';
+                    accountManagementStatusDiv.textContent = 'Error loading account data.';
+                } finally {
+                    hideLoading();
                 }
-                hideLoading();
             } else {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = 'Please log in to manage your account.';
@@ -771,11 +782,14 @@
 
             try {
                 await updateEmail(currentUser, newEmail);
-                await updateUserData(currentUser.uid, { email: newEmail }); // Update email in Firestore
+                // Also update in user's Firestore document
+                await updateDoc(doc(db, "users", currentUser.uid), {
+                    email: newEmail
+                });
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Email updated successfully! You might need to log in again.';
-                // currentUser.email is automatically updated by Firebase Auth if successful
-                authStatusDiv.textContent = `Logged in as: ${currentUser.email}`;
+                // currentUser.email = newEmail; // Not directly settable, will be updated on next onAuthStateChanged
+                authStatusDiv.textContent = `Logged in as: ${newEmail}`; // Optimistic update
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating email: ${error.message}. You might need to log in again.`;
@@ -822,6 +836,7 @@
             }
         });
 
+        // NEW: Update Username
         updateUsernameButton.addEventListener('click', async () => {
             showLoading();
             if (!currentUser) {
@@ -831,51 +846,59 @@
                 return;
             }
 
-            const newUsername = usernameInput.value.trim();
+            const newUsername = newUsernameInput.value.trim();
             if (!newUsername) {
                 accountManagementStatusDiv.className = 'error';
-                accountManagementStatusDiv.textContent = 'Please enter a username.';
-                hideLoading();
-                return;
-            }
-
-            // Check cooldown period
-            if (currentUserData && currentUserData.lastUsernameChange) {
-                const lastChangeDate = currentUserData.lastUsernameChange.toDate();
-                const sevenDaysLater = new Date(lastChangeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
-                const now = new Date();
-                if (now < sevenDaysLater) {
-                    const timeLeft = sevenDaysLater.getTime() - now.getTime();
-                    const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
-                    accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = `Username can only be changed once every 7 days. Please wait ${daysLeft} more days.`;
-                    hideLoading();
-                    return;
-                }
-            }
-
-            // Check if username is already taken by another user
-            const q = query(collection(db, "users"), where("username", "==", newUsername));
-            const querySnapshot = await getDocs(q);
-            const existingUserDoc = querySnapshot.docs.find(doc => doc.id !== currentUser.uid); // Exclude current user's document
-            if (existingUserDoc) {
-                accountManagementStatusDiv.className = 'error';
-                accountManagementStatusDiv.textContent = 'This username is already taken. Please choose another.';
+                accountManagementStatusDiv.textContent = 'Please enter a new username.';
                 hideLoading();
                 return;
             }
 
             try {
-                await updateUserData(currentUser.uid, {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                const userDocSnap = await getDoc(userDocRef);
+                const userData = userDocSnap.data();
+                const usernameLastChanged = userData.usernameLastChanged ? userData.usernameLastChanged.toDate() : new Date(0);
+                const nextChangeDate = new Date(usernameLastChanged.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const now = new Date();
+
+                if (now < nextChangeDate) {
+                    accountManagementStatusDiv.className = 'error';
+                    accountManagementStatusDiv.textContent = `You can only change your username every 7 days. Next change available on ${nextChangeDate.toLocaleDateString()} at ${nextChangeDate.toLocaleTimeString()}.`;
+                    hideLoading();
+                    return;
+                }
+
+                if (newUsername === userData.username) {
+                     accountManagementStatusDiv.className = 'error';
+                    accountManagementStatusDiv.textContent = 'New username is the same as current username.';
+                    hideLoading();
+                    return;
+                }
+
+
+                // Check if new username is unique
+                const q = query(collection(db, "users"), where("username", "==", newUsername));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    accountManagementStatusDiv.className = 'error';
+                    accountManagementStatusDiv.textContent = 'Username already taken. Please choose another.';
+                    hideLoading();
+                    return;
+                }
+
+                await updateDoc(userDocRef, {
                     username: newUsername,
-                    lastUsernameChange: Timestamp.now()
+                    usernameLastChanged: Timestamp.now()
                 });
-                currentUserData.username = newUsername; // Update local cache
-                currentUserData.lastUsernameChange = Timestamp.now(); // Update local cache
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Username updated successfully!';
-                updateUsernameButton.disabled = true; // Disable until cooldown passes
-                openAccountManagementButton.click(); // Re-open to update cooldown message
+                currentUsernameDisplay.textContent = newUsername; // Update display immediately
+                currentUser.username = newUsername; // Update local currentUser object
+                // Recalculate and display next change date
+                const updatedNextChangeDate = new Date(Timestamp.now().toDate().getTime() + 7 * 24 * 60 * 60 * 1000);
+                nextUsernameChangeDisplay.textContent = `on ${updatedNextChangeDate.toLocaleDateString()} at ${updatedNextChangeDate.toLocaleTimeString()}`;
+                updateUsernameButton.disabled = true; // Disable button after change
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating username: ${error.message}`;
@@ -885,6 +908,7 @@
             }
         });
 
+        // NEW: Update Nickname
         updateNicknameButton.addEventListener('click', async () => {
             showLoading();
             if (!currentUser) {
@@ -894,15 +918,17 @@
                 return;
             }
 
-            const newNickname = nicknameInput.value.trim(); // Can be empty if user wants to remove it
+            const newNickname = newNicknameInput.value.trim();
 
             try {
-                await updateUserData(currentUser.uid, {
+                const userDocRef = doc(db, "users", currentUser.uid);
+                await updateDoc(userDocRef, {
                     nickname: newNickname
                 });
-                currentUserData.nickname = newNickname; // Update local cache
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Nickname updated successfully!';
+                currentNicknameDisplay.textContent = newNickname || 'None'; // Update display
+                currentUser.nickname = newNickname; // Update local currentUser object
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating nickname: ${error.message}`;
@@ -915,6 +941,7 @@
 
         // Function to control UI visibility
         function displayMainUI(showPublicView = false) {
+            // Hide all sections first
             document.getElementById('auth-section').classList.add('hidden');
             createTextSection.classList.add('hidden');
             sharedTextsSection.classList.add('hidden');
@@ -922,7 +949,6 @@
             goBackButton.classList.add('hidden');
             accountManagementSection.classList.add('hidden');
             openAccountManagementButton.classList.add('hidden');
-            signupUsernameInput.classList.remove('hidden'); // Show username input by default
 
             if (showPublicView) {
                 publicTextViewSection.classList.remove('hidden');
@@ -933,48 +959,83 @@
                 logoutButton.classList.remove('hidden');
                 signupButton.classList.add('hidden');
                 loginButton.classList.add('hidden');
+                usernameInput.classList.add('hidden'); // Hide username input after login
                 forgotPasswordButton.classList.add('hidden');
-                googleSignInButton.classList.add('hidden');
+                googleSignInButton.classList.add('hidden'); // Hide Google sign-in when logged in
                 openAccountManagementButton.classList.remove('hidden');
-                signupUsernameInput.classList.add('hidden'); // Hide username input when logged in
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
                 logoutButton.classList.add('hidden');
                 signupButton.classList.remove('hidden');
                 loginButton.classList.remove('hidden');
+                usernameInput.classList.remove('hidden'); // Show username input for signup
                 forgotPasswordButton.classList.remove('hidden');
-                googleSignInButton.classList.remove('hidden');
+                googleSignInButton.classList.remove('hidden'); // Show Google sign-in when logged out
             }
             authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
             authStatusDiv.className = currentUser ? 'success' : '';
         }
 
+
+        // Listen for authentication state changes
         onAuthStateChanged(auth, async (user) => {
             currentUser = user;
-            showLoading();
+            showLoading(); // Show loading when auth state changes
             try {
                 if (currentUser) {
-                    currentUserData = await getUserData(currentUser.uid); // Fetch user data on auth change
-                } else {
-                    currentUserData = null;
+                    // Fetch user's profile data (username, nickname, etc.) from Firestore
+                    const userDocRef = doc(db, "users", currentUser.uid);
+                    const userDocSnap = await getDoc(userDocRef);
+                    if (userDocSnap.exists()) {
+                        Object.assign(currentUser, userDocSnap.data()); // Merge Firestore data into currentUser object
+                    } else {
+                        // This case might happen for very old users or if something went wrong during signup.
+                        // Create a default user document if it doesn't exist (e.g., for Google sign-ins that didn't populate it)
+                        let defaultUsername = currentUser.email ? currentUser.email.split('@')[0] : currentUser.uid;
+                        let usernameCounter = 1;
+                        let uniqueUsername = defaultUsername;
+
+                        while (true) {
+                            const q = query(collection(db, "users"), where("username", "==", uniqueUsername));
+                            const querySnapshot = await getDocs(q);
+                            if (querySnapshot.empty) {
+                                break;
+                            }
+                            uniqueUsername = `${defaultUsername}${usernameCounter++}`;
+                        }
+                        await setDoc(userDocRef, {
+                            email: currentUser.email,
+                            username: uniqueUsername,
+                            nickname: '',
+                            usernameLastChanged: Timestamp.now()
+                        });
+                        Object.assign(currentUser, { username: uniqueUsername, nickname: '', usernameLastChanged: Timestamp.now() });
+                    }
                 }
 
                 const hash = window.location.hash;
                 if (hash && hash.startsWith('#text-')) {
                     const textId = hash.substring(6);
-                    await showPublicText(textId);
+                    await showPublicText(textId); // Display public text if hash is present
                 } else {
                     displayMainUI(false);
                     if (currentUser) {
-                        await loadSharedTexts(currentUser.uid);
+                        await loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
                     } else {
-                        sharedTextsDiv.innerHTML = '';
+                        sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
                     }
                 }
-            } finally {
+            } catch(error) {
+                console.error("Error during authentication state change or initial load:", error);
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Failed to load user data: ${error.message}`;
+            }
+            finally {
                 hideLoading();
             }
         });
+
+        // --- Image Upload Functions ---
 
         addImageButton.addEventListener('click', () => {
             imageUploadInput.click();
@@ -1062,6 +1123,8 @@
             return imageUrls;
         }
 
+        // --- Text Sharing Functions ---
+
         shareTextButton.addEventListener('click', async () => {
             showLoading();
             if (!currentUser) {
@@ -1099,8 +1162,6 @@
             try {
                 await addDoc(collection(db, "texts"), {
                     userId: currentUser.uid,
-                    authorUsername: currentUserData.username, // Store current username
-                    authorNickname: currentUserData.nickname || '', // Store current nickname
                     title: title,
                     content: content,
                     timestamp: Timestamp.now(),
@@ -1115,7 +1176,7 @@
                 textAreas.value = '';
                 selectedFiles = [];
                 imagePreviewsDiv.innerHTML = '';
-                await loadSharedTexts(currentUser.uid);
+                await loadSharedTexts(currentUser.uid); // Ensure this also uses loading states
             } catch (error) {
                 messageDiv.className = 'error';
                 messageDiv.textContent = `Error sharing text: ${error.message}`;
@@ -1125,7 +1186,7 @@
         });
 
         async function loadSharedTexts(userId) {
-            showLoading();
+            showLoading(); // Show loading at the start of the function
             sharedTextsDiv.innerHTML = 'Loading your texts...';
             try {
                 const q = query(collection(db, "texts"), where("userId", "==", userId));
@@ -1194,16 +1255,17 @@
             } catch (error) {
                 sharedTextsDiv.innerHTML = `<p class="error">Error loading texts: ${error.message}</p>`;
             } finally {
-                hideLoading();
+                hideLoading(); // Hide loading at the end of the function
             }
         }
 
+        // --- Public Text View Functions ---
+
         window.showPublicText = async (textId) => {
-            showLoading();
+            showLoading(); // Show loading at the start of the function
             displayMainUI(true);
             goBackButton.classList.remove('hidden');
             publicTextTitle.textContent = 'Loading...';
-            publicTextAuthor.textContent = ''; // Clear author
             publicTextTimestamp.textContent = '';
             publicTextContent.textContent = 'Loading text content...';
             publicTextImagesDiv.innerHTML = '';
@@ -1225,7 +1287,6 @@
 
                     if (!isPublic && !isOwner) {
                         publicTextTitle.textContent = 'Access Denied';
-                        publicTextAuthor.textContent = '';
                         publicTextTimestamp.textContent = '';
                         publicTextContent.textContent = 'This text is private and can only be viewed by its owner.';
                         publicTextImagesDiv.innerHTML = '';
@@ -1246,10 +1307,6 @@
                     const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
-
-                    // Fetch author's data
-                    const authorData = await getUserData(textData.userId);
-                    publicTextAuthor.textContent = `By ${formatUserDisplay(authorData)}`;
 
                     publicTextTitle.textContent = textData.title;
                     publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`;
@@ -1295,10 +1352,11 @@
                         commentLoginPrompt.classList.add('hidden');
                         commentsList.innerHTML = '<p>Comments are disabled.</p>';
                     } else if (currentViewedText.commentsLocked) {
-                        commentsStatusMessage.textContent = 'Comments are locked for this text by the owner.';
+                         commentsStatusMessage.textContent = 'Comments are locked for this text by the owner.';
                         commentInputArea.classList.add('hidden');
                         commentLoginPrompt.classList.add('hidden');
-                    } else if (currentUser) {
+                    }
+                    else if (currentUser) {
                         commentInputArea.classList.remove('hidden');
                         commentLoginPrompt.classList.add('hidden');
                     } else {
@@ -1313,7 +1371,6 @@
 
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
-                    publicTextAuthor.textContent = '';
                     publicTextTimestamp.textContent = '';
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicTextImagesDiv.innerHTML = '';
@@ -1331,7 +1388,6 @@
                 }
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
-                publicTextAuthor.textContent = '';
                 publicTextTimestamp.textContent = '';
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicTextImagesDiv.innerHTML = '';
@@ -1347,11 +1403,14 @@
                 commentLoginPrompt.classList.add('hidden');
                 commentsStatusMessage.textContent = '';
             } finally {
-                hideLoading();
+                hideLoading(); // Hide loading at the end of the function
             }
         };
 
+        // --- Comment Functions ---
+
         async function loadComments(textId) {
+            // No showLoading/hideLoading here as this is called within showPublicText, which already handles it.
             commentsList.innerHTML = '';
             try {
                 const q = query(collection(db, "comments"), where("textId", "==", textId), orderBy("timestamp", "asc"));
@@ -1362,14 +1421,40 @@
                     return;
                 }
 
+                const userPromises = {}; // Cache for user data to avoid redundant fetches
+
                 for (const docSnap of querySnapshot.docs) {
                     const commentData = docSnap.data();
                     const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
                     const formattedDate = date.toLocaleString();
+                    const commentUserId = commentData.userId;
 
-                    // Fetch user data for the comment author
-                    const commentAuthorData = await getUserData(commentData.userId);
-                    const authorDisplay = formatUserDisplay(commentAuthorData);
+                    let authorDisplay = 'Anonymous';
+
+                    if (commentUserId) {
+                        if (!userPromises[commentUserId]) {
+                            userPromises[commentUserId] = getDoc(doc(db, "users", commentUserId));
+                        }
+                        const userDocSnap = await userPromises[commentUserId];
+
+                        if (userDocSnap.exists()) {
+                            const userData = userDocSnap.data();
+                            const username = userData.username;
+                            const nickname = userData.nickname;
+                            if (nickname) {
+                                authorDisplay = `${nickname} (@${username})`;
+                            } else if (username) {
+                                authorDisplay = `@${username}`;
+                            } else {
+                                authorDisplay = userData.email || 'Anonymous'; // Fallback to email
+                            }
+                        } else {
+                            authorDisplay = commentData.userEmail || 'Anonymous'; // Fallback to stored email if user doc not found
+                        }
+                    } else if (commentData.userEmail) { // Fallback for old comments or if userId is missing
+                         authorDisplay = commentData.userEmail;
+                    }
+
 
                     const commentItem = document.createElement('div');
                     commentItem.className = 'comment-item';
@@ -1401,7 +1486,7 @@
                 return;
             }
             if (currentViewedText.commentsLocked) {
-                commentMessage.className = 'error';
+                 commentMessage.className = 'error';
                 commentMessage.textContent = 'Comments are currently locked for this text.';
                 hideLoading();
                 return;
@@ -1417,10 +1502,13 @@
             }
 
             try {
+                // Use the username and nickname from the currentUser object
                 await addDoc(collection(db, "comments"), {
                     textId: currentViewedText.id,
                     userId: currentUser.uid,
-                    // userEmail: currentUser.email, // No longer strictly needed as we fetch user data for display
+                    userEmail: currentUser.email, // Keep for fallback/reference
+                    username: currentUser.username, // Store username at time of comment
+                    nickname: currentUser.nickname, // Store nickname at time of comment
                     content: commentContent,
                     timestamp: Timestamp.now()
                 });
@@ -1435,6 +1523,8 @@
                 hideLoading();
             }
         });
+
+        // --- New Comment Management Functions ---
 
         window.toggleCommentsDisabled = async (textId, currentStatus) => {
             showLoading();
@@ -1483,6 +1573,7 @@
             }
         };
 
+        // --- New Public/Private Toggle Function ---
         window.togglePublicStatus = async (textId, currentStatus) => {
             showLoading();
             if (!currentUser) {
@@ -1505,6 +1596,8 @@
                 hideLoading();
             }
         };
+
+        // --- Utility Functions ---
 
         window.downloadText = (title, content) => {
             const element = document.createElement('a');
@@ -1622,6 +1715,11 @@
             }
         };
 
+        /**
+         * Formats a given Date object into a human-readable "time ago" string.
+         * @param {Date} date - The date to format.
+         * @returns {string} - The formatted string (e.g., "5 minutes ago", "2 days ago").
+         */
         function formatTimeAgo(date) {
             const seconds = Math.floor((new Date() - date) / 1000);
 
@@ -1648,8 +1746,11 @@
             return Math.floor(seconds) + " seconds ago";
         }
 
+
+        // --- Initial Load Logic and Hash Change Listener ---
+
         window.addEventListener('hashchange', async () => {
-            showLoading();
+            showLoading(); // Show loading on hash change
             try {
                 const hash = window.location.hash;
                 if (hash && hash.startsWith('#text-')) {
@@ -1662,13 +1763,22 @@
                     }
                 }
             } finally {
-                hideLoading();
+                hideLoading(); // Hide loading after handling hash change
             }
         });
 
+        // Add 'Go Back' button functionality
         goBackButton.addEventListener('click', () => {
             window.location.hash = '';
         });
+
+        // Corrected Firebase Storage Bucket configuration
+        // The firebaseConfig already has storageBucket: "noteshare-c6815.firebaseapp.com"
+        // It should be noteshare-c6815.appspot.com for typical usage with Firebase Storage client SDK.
+        // If you are only using Supabase for storage, this Firebase storageBucket value doesn't matter for the files.
+        // However, if you eventually plan to use Firebase Storage directly, ensure it's correct.
+        // Given your use of Supabase, this is fine as is, but noted for future reference.
+
     </script>
 </body>
 </html>
