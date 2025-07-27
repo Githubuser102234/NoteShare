@@ -29,7 +29,7 @@
         }
         input[type="email"],
         input[type="password"],
-        input[type="text"], /* Added for username/nickname inputs */
+        input[type="text"], /* Added for username/nickname */
         textarea {
             width: calc(100% - 22px);
             padding: 10px;
@@ -278,7 +278,7 @@
 
         #account-management input[type="email"],
         #account-management input[type="password"],
-        #account-management input[type="text"] { /* Added for username/nickname inputs */
+        #account-management input[type="text"] { /* Added for username/nickname */
             width: calc(100% - 20px); /* Adjust width for padding */
             font-size: 0.9em;
         }
@@ -342,6 +342,47 @@
         .google-signin-button:hover {
             background-color: #c23321;
         }
+
+        /* New styles for username prompt */
+        #username-prompt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+        }
+        #username-prompt-box {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 300px;
+        }
+        #username-prompt-box h3 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+        #username-prompt-box input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        #username-prompt-box button {
+            width: 100%;
+            padding: 10px;
+        }
+        #username-prompt-status {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
     </style>
 </head>
 <body>
@@ -352,6 +393,17 @@
             <div class="dot"></div>
         </div>
     </div>
+
+    <div id="username-prompt-overlay" class="hidden">
+        <div id="username-prompt-box">
+            <h3>Choose a Username</h3>
+            <p>You need a username to get started.</p>
+            <input type="text" id="prompt-username-input" placeholder="Enter your desired username">
+            <button id="set-prompt-username-button">Set Username</button>
+            <div id="username-prompt-status"></div>
+        </div>
+    </div>
+
 
     <div class="container">
         <h1>Welcome to TextShare</h1>
@@ -366,15 +418,16 @@
             <button id="update-password-button">Update Password</button>
 
             <hr>
-            <h4>Profile Information</h4>
-            <label for="username-input">Username:</label>
-            <input type="text" id="username-input" placeholder="Enter your username">
+            <h4>Username & Nickname</h4>
+            <label for="new-username">Username:</label>
+            <input type="text" id="new-username" placeholder="Enter new username">
+            <p id="username-change-info" style="font-size: 0.8em; color: #666; margin-top: -5px; margin-bottom: 10px;"></p>
             <button id="update-username-button">Update Username</button>
-            <p style="font-size: 0.8em; color: #666;">Can be changed every 7 days.</p>
 
-            <label for="nickname-input">Nickname (Optional):</label>
-            <input type="text" id="nickname-input" placeholder="Enter your nickname">
+            <label for="nickname">Nickname (Optional):</label>
+            <input type="text" id="nickname" placeholder="Enter your nickname">
             <button id="update-nickname-button">Update Nickname</button>
+
             <div id="account-management-status"></div>
             <button id="close-account-management" style="background-color: #6c757d;">Close</button>
         </div>
@@ -387,10 +440,8 @@
             <button id="signup-button">Sign Up</button>
             <button id="login-button">Log In</button>
             <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
-            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button>
-            <button id="logout-button" class="hidden">Log Out</button>
-            <button id="open-account-management" class="hidden">Account Management</button>
-            <div id="auth-status"></div>
+            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button> <button id="logout-button" class="hidden">Log Out</button>
+            <button id="open-account-management" class="hidden">Account Management</button> <div id="auth-status"></div>
         </div>
 
         <hr>
@@ -419,7 +470,7 @@
             <h2>Viewing Shared Text</h2>
             <h3 id="public-text-title"></h3>
             <span id="public-text-timestamp" class="text-timestamp"></span>
-            <pre id="public-text-content"></pre>
+            <p id="public-text-author" class="text-timestamp"></p> <pre id="public-text-content"></pre>
             <div id="public-text-images"></div>
             <div id="public-text-actions">
                 <button id="public-download-button">Download</button>
@@ -465,7 +516,7 @@
             apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
             authDomain: "noteshare-c6815.firebaseapp.com",
             projectId: "noteshare-c6815",
-            storageBucket: "noteshare-c6815.firebase.appspot.com", // Corrected storageBucket
+            storageBucket: "noteshare-c6815.firebaseapp.com", // Corrected storageBucket
             messagingSenderId: "193971626161",
             appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
             measurementId: "G-5YWVLKRVRT"
@@ -504,6 +555,7 @@
         const publicTextViewSection = document.getElementById('public-text-view');
         const publicTextTitle = document.getElementById('public-text-title');
         const publicTextTimestamp = document.getElementById('public-text-timestamp'); // New element
+        const publicTextAuthor = document.getElementById('public-text-author'); // New element for author
         const publicTextContent = document.getElementById('public-text-content');
         const publicTextImagesDiv = document.getElementById('public-text-images'); // New
         const publicDownloadButton = document.getElementById('public-download-button');
@@ -537,18 +589,24 @@
         const newPasswordInput = document.getElementById('new-password');
         const updateEmailButton = document.getElementById('update-email-button');
         const updatePasswordButton = document.getElementById('update-password-button');
-        const accountManagementStatusDiv = document.getElementById('account-management-status');
-        const usernameInput = document.getElementById('username-input'); // New
+        const newUsernameInput = document.getElementById('new-username'); // New
+        const usernameChangeInfo = document.getElementById('username-change-info'); // New
         const updateUsernameButton = document.getElementById('update-username-button'); // New
-        const nicknameInput = document.getElementById('nickname-input'); // New
+        const nicknameInput = document.getElementById('nickname'); // New
         const updateNicknameButton = document.getElementById('update-nickname-button'); // New
+        const accountManagementStatusDiv = document.getElementById('account-management-status');
 
         // Loading Overlay Element
         const loadingOverlay = document.getElementById('loading-overlay');
 
+        // Username Prompt Overlay Elements
+        const usernamePromptOverlay = document.getElementById('username-prompt-overlay');
+        const promptUsernameInput = document.getElementById('prompt-username-input');
+        const setPromptUsernameButton = document.getElementById('set-prompt-username-button');
+        const usernamePromptStatus = document.getElementById('username-prompt-status');
 
         let currentUser = null; // To store the current logged-in user
-        let currentUserData = null; // To store additional user data (username, nickname)
+        let currentUserProfile = null; // To store the current user's profile from Firestore (username, nickname, etc.)
         let currentViewedText = null; // To store text data for public view
         let selectedFiles = []; // To store files selected for upload
 
@@ -561,6 +619,92 @@
             loadingOverlay.classList.add('hidden');
         }
 
+        // --- Username Prompt Functions ---
+        async function showUsernamePrompt() {
+            usernamePromptOverlay.classList.remove('hidden');
+            usernamePromptStatus.textContent = '';
+            promptUsernameInput.value = '';
+            // Ensure auth status is not visible behind prompt
+            authStatusDiv.classList.add('hidden');
+        }
+
+        function hideUsernamePrompt() {
+            usernamePromptOverlay.classList.add('hidden');
+            authStatusDiv.classList.remove('hidden');
+        }
+
+        setPromptUsernameButton.addEventListener('click', async () => {
+            showLoading();
+            const username = promptUsernameInput.value.trim();
+            if (!username) {
+                usernamePromptStatus.className = 'error';
+                usernamePromptStatus.textContent = 'Username cannot be empty.';
+                hideLoading();
+                return;
+            }
+            if (!/^[a-zA-Z0-9_]{3,15}$/.test(username)) {
+                usernamePromptStatus.className = 'error';
+                usernamePromptStatus.textContent = 'Username must be 3-15 characters, alphanumeric or underscores.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                // Check if username already exists
+                const q = query(collection(db, "userProfiles"), where("username", "==", username));
+                const querySnapshot = await getDocs(q);
+                if (!querySnapshot.empty) {
+                    usernamePromptStatus.className = 'error';
+                    usernamePromptStatus.textContent = 'This username is already taken. Please choose another.';
+                    hideLoading();
+                    return;
+                }
+
+                await setDoc(doc(db, "userProfiles", currentUser.uid), {
+                    username: username,
+                    nickname: '', // Initialize with empty nickname
+                    lastUsernameChange: Timestamp.now(),
+                    email: currentUser.email
+                }, { merge: true }); // Use merge to avoid overwriting existing fields
+
+                currentUserProfile = {
+                    username: username,
+                    nickname: '',
+                    lastUsernameChange: Timestamp.now().toDate(),
+                    email: currentUser.email
+                };
+                hideUsernamePrompt();
+                displayMainUI();
+                await loadSharedTexts(currentUser.uid); // Load texts after username is set
+            } catch (error) {
+                usernamePromptStatus.className = 'error';
+                usernamePromptStatus.textContent = `Error setting username: ${error.message}`;
+                console.error("Error setting username:", error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // Function to fetch user profile
+        async function fetchUserProfile(uid) {
+            try {
+                const docRef = doc(db, "userProfiles", uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const profileData = docSnap.data();
+                    // Convert Firebase Timestamp to JavaScript Date object
+                    if (profileData.lastUsernameChange && profileData.lastUsernameChange instanceof Timestamp) {
+                        profileData.lastUsernameChange = profileData.lastUsernameChange.toDate();
+                    }
+                    return profileData;
+                }
+                return null;
+            } catch (error) {
+                console.error("Error fetching user profile:", error);
+                return null;
+            }
+        }
+
         // --- Authentication Functions ---
 
         signupButton.addEventListener('click', async () => {
@@ -569,17 +713,11 @@
             const password = passwordInput.value;
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                // Create user data in Firestore immediately after signup
-                await setDoc(doc(db, "users", userCredential.user.uid), {
-                    email: userCredential.user.email,
-                    username: null, // Will be set in account management
-                    nickname: null, // Optional
-                    usernameLastChanged: null // To track the 7-day cooldown
-                });
+                currentUser = userCredential.user; // Set current user immediately after signup
+                // Prompt for username after successful signup
+                await showUsernamePrompt();
                 authStatusDiv.className = 'success';
-                authStatusDiv.textContent = `Successfully signed up and logged in as ${userCredential.user.email}. Please set your username in Account Management!`;
-                // Redirect to account management for username setup
-                openAccountManagementButton.click();
+                authStatusDiv.textContent = `Successfully signed up as ${userCredential.user.email}. Please choose a username.`;
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error signing up: ${error.message}`;
@@ -594,8 +732,19 @@
             const password = passwordInput.value;
             try {
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                authStatusDiv.className = 'success';
-                authStatusDiv.textContent = `Successfully logged in as ${userCredential.user.email}`;
+                currentUser = userCredential.user; // Set current user
+                // Check if user has a profile (specifically, a username)
+                currentUserProfile = await fetchUserProfile(currentUser.uid);
+                if (!currentUserProfile || !currentUserProfile.username) {
+                    await showUsernamePrompt();
+                    authStatusDiv.className = 'success';
+                    authStatusDiv.textContent = `Logged in as ${currentUser.email}. Please choose a username.`;
+                } else {
+                    authStatusDiv.className = 'success';
+                    authStatusDiv.textContent = `Successfully logged in as ${currentUser.email}`;
+                    displayMainUI();
+                    await loadSharedTexts(currentUser.uid);
+                }
             } catch (error) {
                 authStatusDiv.className = 'error';
                 authStatusDiv.textContent = `Error logging in: ${error.message}`;
@@ -610,25 +759,17 @@
             const provider = new GoogleAuthProvider();
             try {
                 const userCredential = await signInWithPopup(auth, provider);
-                // Check if user data already exists in Firestore for Google Sign-in
-                const userDocRef = doc(db, "users", userCredential.user.uid);
-                const userDocSnap = await getDoc(userDocRef);
-
-                if (!userDocSnap.exists()) {
-                    // Create user data if it doesn't exist (first time Google sign-in)
-                    await setDoc(userDocRef, {
-                        email: userCredential.user.email,
-                        username: null, // Will be set in account management
-                        nickname: null,
-                        usernameLastChanged: null
-                    });
-                     authStatusDiv.className = 'success';
-                    authStatusDiv.textContent = `Successfully signed in with Google as ${userCredential.user.email}. Please set your username in Account Management!`;
-                    // Redirect to account management for username setup
-                    openAccountManagementButton.click();
+                currentUser = userCredential.user; // Set current user
+                currentUserProfile = await fetchUserProfile(currentUser.uid);
+                if (!currentUserProfile || !currentUserProfile.username) {
+                    await showUsernamePrompt();
+                    authStatusDiv.className = 'success';
+                    authStatusDiv.textContent = `Logged in with Google as ${currentUser.email}. Please choose a username.`;
                 } else {
                     authStatusDiv.className = 'success';
-                    authStatusDiv.textContent = `Successfully logged in with Google as ${userCredential.user.email}`;
+                    authStatusDiv.textContent = `Successfully logged in with Google as ${currentUser.email}`;
+                    displayMainUI();
+                    await loadSharedTexts(currentUser.uid);
                 }
             } catch (error) {
                 authStatusDiv.className = 'error';
@@ -664,7 +805,8 @@
             showLoading();
             try {
                 await signOut(auth);
-                currentUserData = null; // Clear user data on logout
+                currentUser = null;
+                currentUserProfile = null;
                 // When logged out, clear the hash and show the default (auth) view
                 window.location.hash = ''; // Remove hash
                 displayMainUI(); // Go back to default UI state
@@ -679,57 +821,40 @@
         });
 
         // --- Account Management Functions ---
-        openAccountManagementButton.addEventListener('click', async () => {
-            showLoading();
-            if (!currentUser) {
-                authStatusDiv.className = 'error';
-                authStatusDiv.textContent = 'Please log in to manage your account.';
-                hideLoading();
-                return;
-            }
-
-            try {
-                await fetchUserData(currentUser.uid); // Fetch latest user data
+        openAccountManagementButton.addEventListener('click', () => {
+            if (currentUser && currentUserProfile) {
                 accountManagementSection.classList.remove('hidden');
                 newEmailInput.value = currentUser.email;
-                newPasswordInput.value = '';
-                accountManagementStatusDiv.textContent = ''; // Clear status
+                newPasswordInput.value = ''; // Clear password input
+                newUsernameInput.value = currentUserProfile.username || '';
+                nicknameInput.value = currentUserProfile.nickname || '';
 
-                usernameInput.value = currentUserData?.username || '';
-                nicknameInput.value = currentUserData?.nickname || '';
+                const now = new Date();
+                const lastChange = currentUserProfile.lastUsernameChange;
+                const sevenDays = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
 
-                // Check if username can be changed (7-day cooldown)
-                if (currentUserData && currentUserData.usernameLastChanged) {
-                    const lastChangedDate = currentUserData.usernameLastChanged.toDate();
-                    const sevenDaysAgo = new Date();
-                    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                    if (lastChangedDate > sevenDaysAgo) {
-                        updateUsernameButton.disabled = true;
-                        const nextChangeDate = new Date(lastChangedDate);
-                        nextChangeDate.setDate(nextChangeDate.getDate() + 7);
-                        accountManagementStatusDiv.className = 'info';
-                        accountManagementStatusDiv.textContent = `Username can be changed again after ${nextChangeDate.toLocaleDateString()}.`;
-                    } else {
-                        updateUsernameButton.disabled = false;
-                    }
+                if (lastChange && (now.getTime() - lastChange.getTime()) < sevenDays) {
+                    const timeLeft = sevenDays - (now.getTime() - lastChange.getTime());
+                    const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    usernameChangeInfo.textContent = `You can change your username again in ${days} days and ${hours} hours.`;
+                    updateUsernameButton.disabled = true;
+                    newUsernameInput.disabled = true;
                 } else {
-                    updateUsernameButton.disabled = false; // Enable if no last changed date (new user)
+                    usernameChangeInfo.textContent = 'You can change your username now.';
+                    updateUsernameButton.disabled = false;
+                    newUsernameInput.disabled = false;
                 }
 
-            } catch (error) {
-                accountManagementStatusDiv.className = 'error';
-                accountManagementStatusDiv.textContent = `Error loading account data: ${error.message}`;
-            } finally {
-                hideLoading();
+                accountManagementStatusDiv.textContent = ''; // Clear status
+            } else {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please log in to manage your account.';
             }
         });
 
         closeAccountManagementButton.addEventListener('click', () => {
             accountManagementSection.classList.add('hidden');
-            // If the user doesn't have a username, keep the account management open
-            if (currentUser && !currentUserData?.username) {
-                displayMainUI(false); // Go back to main UI if username is set
-            }
         });
 
         updateEmailButton.addEventListener('click', async () => {
@@ -751,11 +876,14 @@
 
             try {
                 await updateEmail(currentUser, newEmail);
-                // Also update email in users collection
-                await updateDoc(doc(db, "users", currentUser.uid), { email: newEmail });
+                // Also update email in userProfile
+                await updateDoc(doc(db, "userProfiles", currentUser.uid), {
+                    email: newEmail
+                });
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Email updated successfully! You might need to log in again.';
                 currentUser.email = newEmail;
+                if (currentUserProfile) currentUserProfile.email = newEmail;
                 authStatusDiv.textContent = `Logged in as: ${currentUser.email}`;
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
@@ -803,20 +931,19 @@
             }
         });
 
-        // New: Update Username
         updateUsernameButton.addEventListener('click', async () => {
             showLoading();
-            if (!currentUser) {
+            if (!currentUser || !currentUserProfile) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = 'You must be logged in to update your username.';
                 hideLoading();
                 return;
             }
 
-            const newUsername = usernameInput.value.trim();
+            const newUsername = newUsernameInput.value.trim();
             if (!newUsername) {
                 accountManagementStatusDiv.className = 'error';
-                accountManagementStatusDiv.textContent = 'Username cannot be empty.';
+                accountManagementStatusDiv.textContent = 'Please enter a new username.';
                 hideLoading();
                 return;
             }
@@ -826,40 +953,44 @@
                 hideLoading();
                 return;
             }
-
-            // Check cooldown
-            if (currentUserData && currentUserData.usernameLastChanged) {
-                const lastChangedDate = currentUserData.usernameLastChanged.toDate();
-                const sevenDaysAgo = new Date();
-                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                if (lastChangedDate > sevenDaysAgo) {
-                    accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = 'You can only change your username every 7 days.';
-                    hideLoading();
-                    return;
-                }
+            if (newUsername === currentUserProfile.username) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'New username is the same as current username.';
+                hideLoading();
+                return;
             }
 
-            // Check if username already exists
+            const now = new Date();
+            const lastChange = currentUserProfile.lastUsernameChange;
+            const sevenDays = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
+            if (lastChange && (now.getTime() - lastChange.getTime()) < sevenDays) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'You can only change your username every 7 days.';
+                hideLoading();
+                return;
+            }
+
             try {
-                const q = query(collection(db, "users"), where("username", "==", newUsername));
+                // Check if new username already exists
+                const q = query(collection(db, "userProfiles"), where("username", "==", newUsername));
                 const querySnapshot = await getDocs(q);
-                if (!querySnapshot.empty && querySnapshot.docs[0].id !== currentUser.uid) {
+                if (!querySnapshot.empty) {
                     accountManagementStatusDiv.className = 'error';
-                    accountManagementStatusDiv.textContent = 'This username is already taken.';
+                    accountManagementStatusDiv.textContent = 'This username is already taken. Please choose another.';
                     hideLoading();
                     return;
                 }
 
-                await updateDoc(doc(db, "users", currentUser.uid), {
+                await updateDoc(doc(db, "userProfiles", currentUser.uid), {
                     username: newUsername,
-                    usernameLastChanged: Timestamp.now()
+                    lastUsernameChange: Timestamp.now()
                 });
-                currentUserData.username = newUsername; // Update local data
-                currentUserData.usernameLastChanged = Timestamp.now();
+                currentUserProfile.username = newUsername;
+                currentUserProfile.lastUsernameChange = Timestamp.now().toDate(); // Update local profile
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Username updated successfully!';
-                updateUsernameButton.disabled = true; // Disable button immediately after change
+                openAccountManagementButton.click(); // Re-open to refresh time info
             } catch (error) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = `Error updating username: ${error.message}`;
@@ -869,23 +1000,22 @@
             }
         });
 
-        // New: Update Nickname
         updateNicknameButton.addEventListener('click', async () => {
             showLoading();
-            if (!currentUser) {
+            if (!currentUser || !currentUserProfile) {
                 accountManagementStatusDiv.className = 'error';
                 accountManagementStatusDiv.textContent = 'You must be logged in to update your nickname.';
                 hideLoading();
                 return;
             }
 
-            const newNickname = nicknameInput.value.trim();
+            const newNickname = nicknameInput.value.trim(); // Nickname can be empty
 
             try {
-                await updateDoc(doc(db, "users", currentUser.uid), {
-                    nickname: newNickname || null // Store null if empty
+                await updateDoc(doc(db, "userProfiles", currentUser.uid), {
+                    nickname: newNickname
                 });
-                currentUserData.nickname = newNickname; // Update local data
+                currentUserProfile.nickname = newNickname; // Update local profile
                 accountManagementStatusDiv.className = 'success';
                 accountManagementStatusDiv.textContent = 'Nickname updated successfully!';
             } catch (error) {
@@ -908,28 +1038,25 @@
             goBackButton.classList.add('hidden');
             accountManagementSection.classList.add('hidden');
             openAccountManagementButton.classList.add('hidden');
+            usernamePromptOverlay.classList.add('hidden'); // Ensure username prompt is hidden by default
 
             if (showPublicView) {
                 publicTextViewSection.classList.remove('hidden');
             } else if (currentUser) {
-                // If user is logged in but has no username, force account management
-                if (!currentUserData || !currentUserData.username) {
-                    accountManagementSection.classList.remove('hidden');
-                    authStatusDiv.className = 'error';
-                    authStatusDiv.textContent = 'Please set your username to continue using TextShare.';
-                    // Prevent other sections from showing
-                    return;
+                if (currentUserProfile && currentUserProfile.username) { // Only show main UI if username exists
+                    createTextSection.classList.remove('hidden');
+                    sharedTextsSection.classList.remove('hidden');
+                    document.getElementById('auth-section').classList.remove('hidden');
+                    logoutButton.classList.remove('hidden');
+                    signupButton.classList.add('hidden');
+                    loginButton.classList.add('hidden');
+                    forgotPasswordButton.classList.add('hidden');
+                    googleSignInButton.classList.add('hidden'); // Hide Google sign-in when logged in
+                    openAccountManagementButton.classList.remove('hidden');
+                } else {
+                    // User is logged in but no username yet, show prompt
+                    showUsernamePrompt();
                 }
-
-                createTextSection.classList.remove('hidden');
-                sharedTextsSection.classList.remove('hidden');
-                document.getElementById('auth-section').classList.remove('hidden');
-                logoutButton.classList.remove('hidden');
-                signupButton.classList.add('hidden');
-                loginButton.classList.add('hidden');
-                forgotPasswordButton.classList.add('hidden');
-                googleSignInButton.classList.add('hidden'); // Hide Google sign-in when logged in
-                openAccountManagementButton.classList.remove('hidden');
             } else {
                 document.getElementById('auth-section').classList.remove('hidden');
                 logoutButton.classList.add('hidden');
@@ -942,31 +1069,6 @@
             authStatusDiv.className = currentUser ? 'success' : '';
         }
 
-        // New: Fetch user data (username, nickname) from Firestore
-        async function fetchUserData(uid) {
-            const userDocRef = doc(db, "users", uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                currentUserData = userDocSnap.data();
-            } else {
-                currentUserData = null;
-            }
-        }
-
-        // New: Get display name for a user (nickname or username)
-        async function getDisplayName(uid) {
-            const userDocRef = doc(db, "users", uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (userDocSnap.exists()) {
-                const data = userDocSnap.data();
-                if (data.nickname) {
-                    return `${data.nickname} (@${data.username})`;
-                } else if (data.username) {
-                    return `@${data.username}`;
-                }
-            }
-            return 'Anonymous'; // Fallback
-        }
 
         // Listen for authentication state changes
         onAuthStateChanged(auth, async (user) => {
@@ -974,20 +1076,32 @@
             showLoading(); // Show loading when auth state changes
             try {
                 if (currentUser) {
-                    await fetchUserData(currentUser.uid); // Fetch user's custom data
-                } else {
-                    currentUserData = null;
-                }
-
-                const hash = window.location.hash;
-                if (hash && hash.startsWith('#text-')) {
-                    const textId = hash.substring(6);
-                    await showPublicText(textId); // Display public text if hash is present
-                } else {
-                    displayMainUI(false);
-                    if (currentUser) {
-                        await loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
+                    currentUserProfile = await fetchUserProfile(currentUser.uid);
+                    if (!currentUserProfile || !currentUserProfile.username) {
+                        // User logged in but no profile/username, prompt for it
+                        await showUsernamePrompt();
+                        authStatusDiv.className = 'success';
+                        authStatusDiv.textContent = `Logged in as ${currentUser.email}. Please choose a username.`;
+                        // Do not load shared texts until username is set
                     } else {
+                        // User has a profile and username
+                        const hash = window.location.hash;
+                        if (hash && hash.startsWith('#text-')) {
+                            const textId = hash.substring(6);
+                            await showPublicText(textId); // Display public text if hash is present
+                        } else {
+                            displayMainUI(false);
+                            await loadSharedTexts(currentUser.uid); // Load texts for the logged-in user
+                        }
+                    }
+                } else {
+                    currentUserProfile = null;
+                    const hash = window.location.hash;
+                    if (hash && hash.startsWith('#text-')) {
+                        const textId = hash.substring(6);
+                        await showPublicText(textId); // Allow public view even if logged out
+                    } else {
+                        displayMainUI(false);
                         sharedTextsDiv.innerHTML = ''; // Clear texts when logged out
                     }
                 }
@@ -1088,15 +1202,9 @@
 
         shareTextButton.addEventListener('click', async () => {
             showLoading();
-            if (!currentUser) {
+            if (!currentUser || !currentUserProfile || !currentUserProfile.username) {
                 messageDiv.className = 'error';
-                messageDiv.textContent = 'Please log in to share text.';
-                hideLoading();
-                return;
-            }
-             if (!currentUserData || !currentUserData.username) {
-                messageDiv.className = 'error';
-                messageDiv.textContent = 'Please set your username in Account Management before sharing texts.';
+                messageDiv.textContent = 'Please log in and set a username to share text.';
                 hideLoading();
                 return;
             }
@@ -1156,7 +1264,7 @@
             showLoading(); // Show loading at the start of the function
             sharedTextsDiv.innerHTML = 'Loading your texts...';
             try {
-                const q = query(collection(db, "texts"), where("userId", "==", userId));
+                const q = query(collection(db, "texts"), where("userId", "==", userId), orderBy("timestamp", "desc")); // Order by newest first
                 const querySnapshot = await getDocs(q);
                 sharedTextsDiv.innerHTML = '';
 
@@ -1165,7 +1273,7 @@
                     return;
                 }
 
-                for (const docSnap of querySnapshot.docs) {
+                for (const docSnap of querySnapshot.docs) { // Use for...of with await for async operations inside
                     const textData = docSnap.data();
                     const textId = docSnap.id;
                     const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
@@ -1196,8 +1304,10 @@
                         }
                     });
 
-                    // Fetch the user's display name for each text
-                    const ownerDisplayName = await getDisplayName(textData.userId);
+                    // Fetch author profile
+                    const authorProfile = await fetchUserProfile(textData.userId);
+                    const authorDisplay = formatAuthorDisplay(authorProfile);
+
 
                     const textItem = document.createElement('div');
                     textItem.className = 'text-item';
@@ -1205,8 +1315,8 @@
 
                     textItem.innerHTML = `
                         <h3><a href="#text-${textId}">${textData.title}</a></h3>
-                        <p style="font-size: 0.9em; color: #555;">By ${ownerDisplayName}</p>
                         <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
+                        <p class="text-timestamp">By ${authorDisplay}</p>
                         <pre>${textData.content}</pre>
                         ${imageHtml}
                         <div class="actions">
@@ -1238,6 +1348,7 @@
             goBackButton.classList.remove('hidden');
             publicTextTitle.textContent = 'Loading...';
             publicTextTimestamp.textContent = '';
+            publicTextAuthor.textContent = ''; // Clear author
             publicTextContent.textContent = 'Loading text content...';
             publicTextImagesDiv.innerHTML = '';
             publicViewStatus.textContent = '';
@@ -1259,6 +1370,7 @@
                     if (!isPublic && !isOwner) {
                         publicTextTitle.textContent = 'Access Denied';
                         publicTextTimestamp.textContent = '';
+                        publicTextAuthor.textContent = '';
                         publicTextContent.textContent = 'This text is private and can only be viewed by its owner.';
                         publicTextImagesDiv.innerHTML = '';
                         publicViewStatus.className = 'error';
@@ -1278,6 +1390,10 @@
                     const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
                     const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
                     const timeAgo = formatTimeAgo(date);
+
+                    // Fetch and display author's username/nickname
+                    const authorProfile = await fetchUserProfile(textData.userId);
+                    publicTextAuthor.textContent = `By ${formatAuthorDisplay(authorProfile)}`;
 
                     publicTextTitle.textContent = textData.title;
                     publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`;
@@ -1343,6 +1459,7 @@
                 } else {
                     publicTextTitle.textContent = 'Text Not Found';
                     publicTextTimestamp.textContent = '';
+                    publicTextAuthor.textContent = '';
                     publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
                     publicTextImagesDiv.innerHTML = '';
                     publicViewStatus.className = 'error';
@@ -1360,6 +1477,7 @@
             } catch (error) {
                 publicTextTitle.textContent = 'Error';
                 publicTextTimestamp.textContent = '';
+                publicTextAuthor.textContent = '';
                 publicTextContent.textContent = 'Could not load text due to an error.';
                 publicTextImagesDiv.innerHTML = '';
                 publicViewStatus.className = 'error';
@@ -1374,7 +1492,7 @@
                 commentLoginPrompt.classList.add('hidden');
                 commentsStatusMessage.textContent = '';
             } finally {
-                hideLoading(); // Hide loading at the end of the function
+                hideLoading();
             }
         };
 
@@ -1397,13 +1515,14 @@
                     const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
                     const formattedDate = date.toLocaleString();
 
-                    // Fetch the author's display name
-                    const authorDisplayName = await getDisplayName(commentData.userId);
+                    // Fetch author profile for the comment
+                    const commentAuthorProfile = await fetchUserProfile(commentData.userId);
+                    const authorDisplay = formatAuthorDisplay(commentAuthorProfile);
 
                     const commentItem = document.createElement('div');
                     commentItem.className = 'comment-item';
                     commentItem.innerHTML = `
-                        <span class="comment-author">${authorDisplayName}</span>
+                        <span class="comment-author">${authorDisplay}</span>
                         <p>${commentData.content}</p>
                         <span class="comment-timestamp">${formattedDate}</span>
                     `;
@@ -1416,15 +1535,9 @@
 
         postCommentButton.addEventListener('click', async () => {
             showLoading();
-            if (!currentUser || !currentViewedText) {
+            if (!currentUser || !currentUserProfile || !currentUserProfile.username || !currentViewedText) {
                 commentMessage.className = 'error';
                 commentMessage.textContent = 'You must be logged in and viewing a text to post a comment.';
-                hideLoading();
-                return;
-            }
-             if (!currentUserData || !currentUserData.username) {
-                commentMessage.className = 'error';
-                commentMessage.textContent = 'Please set your username in Account Management to post comments.';
                 hideLoading();
                 return;
             }
@@ -1455,7 +1568,6 @@
                 await addDoc(collection(db, "comments"), {
                     textId: currentViewedText.id,
                     userId: currentUser.uid,
-                    // userEmail: currentUser.email, // No longer strictly needed for display
                     content: commentContent,
                     timestamp: Timestamp.now()
                 });
@@ -1484,7 +1596,7 @@
                 const textRef = doc(db, "texts", textId);
                 await updateDoc(textRef, {
                     commentsDisabled: !currentStatus,
-                    commentsLocked: false
+                    commentsLocked: false // If comments are disabled, they are implicitly unlocked
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = `Comments ${!currentStatus ? 'disabled' : 'enabled'} successfully!`;
@@ -1507,7 +1619,8 @@
             try {
                 const textRef = doc(db, "texts", textId);
                 await updateDoc(textRef, {
-                    commentsLocked: !currentStatus
+                    commentsLocked: !currentStatus,
+                    commentsDisabled: false // If comments are locked, they are implicitly enabled but locked
                 });
                 messageDiv.className = 'success';
                 messageDiv.textContent = `Comments ${!currentStatus ? 'locked' : 'unlocked'} successfully!`;
@@ -1693,6 +1806,21 @@
             return Math.floor(seconds) + " seconds ago";
         }
 
+        /**
+         * Formats the author display string based on nickname and username.
+         * @param {object} profile - The user profile object containing username and nickname.
+         * @returns {string} - The formatted author string.
+         */
+        function formatAuthorDisplay(profile) {
+            if (!profile || !profile.username) {
+                return '@unknown'; // Fallback if profile or username is missing
+            }
+            if (profile.nickname) {
+                return `${profile.nickname} (@${profile.username})`;
+            }
+            return `@${profile.username}`;
+        }
+
 
         // --- Initial Load Logic and Hash Change Listener ---
 
@@ -1705,7 +1833,7 @@
                     await showPublicText(textId);
                 } else {
                     displayMainUI(false);
-                    if (currentUser) {
+                    if (currentUser && currentUserProfile && currentUserProfile.username) {
                         await loadSharedTexts(currentUser.uid);
                     }
                 }
@@ -1718,13 +1846,6 @@
         goBackButton.addEventListener('click', () => {
             window.location.hash = '';
         });
-
-        // Corrected Firebase Storage Bucket configuration
-        // The firebaseConfig already has storageBucket: "noteshare-c6815.firebaseapp.com"
-        // It should be noteshare-c6815.appspot.com for typical usage with Firebase Storage client SDK.
-        // If you are only using Supabase for storage, this Firebase storageBucket value doesn't matter for the files.
-        // However, if you eventually plan to use Firebase Storage directly, ensure it's correct.
-        // Given your use of Supabase, this is fine as is, but noted for future reference.
 
     </script>
 </body>
