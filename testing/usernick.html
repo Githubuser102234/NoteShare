@@ -1,0 +1,1674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TextShare">
+    <link rel="apple-touch-icon" href="icon.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TextShare</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: relative;
+        }
+        h1, h2 {
+            color: #0056b3;
+        }
+        input[type="email"],
+        input[type="password"],
+        input[type="text"], /* Added for username/nickname inputs */
+        textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .forgot-password-button {
+            background-color: #6c757d;
+            font-size: 0.9em;
+            padding: 8px 12px;
+            margin-top: 5px;
+        }
+        .forgot-password-button:hover {
+            background-color: #5a6268;
+        }
+        #auth-status, #message, #public-view-status, #account-management-status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        #auth-status.success, #public-view-status.success, .copy-status.success, #account-management-status.success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        #auth-status.error, #public-view-status.error, .copy-status.error, #account-management-status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .copy-status {
+            margin-left: 10px;
+            display: inline-block;
+            font-size: 0.9em;
+        }
+        #shared-texts {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .text-item {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+        }
+        .text-item h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .text-item pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .text-item .actions button {
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        .hidden {
+            display: none !important;
+        }
+        #public-text-view {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        #public-text-view h2 {
+            margin-bottom: 15px;
+        }
+        #public-text-content {
+            background-color: #f0f0f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            min-height: 100px;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+        }
+        #public-text-actions button {
+            margin-right: 10px;
+            margin-top: 15px;
+        }
+        .text-timestamp {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 10px;
+            display: block;
+        }
+        .comments-section {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .comment-input-area textarea {
+            width: calc(100% - 22px);
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .comment-item {
+            background-color: #f0f8ff;
+            border: 1px solid #d0e8ff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #0056b3;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .comment-timestamp {
+            font-size: 0.8em;
+            color: #888;
+            margin-top: 5px;
+            display: block;
+        }
+        .comments-status {
+            font-style: italic;
+            color: #d9534f;
+            margin-bottom: 10px;
+        }
+        .toggle-button.active {
+            background-color: #28a745;
+        }
+        .public-toggle-button {
+            background-color: #17a2b8;
+        }
+        .public-toggle-button:hover {
+            background-color: #138496;
+        }
+        .public-toggle-button.private {
+            background-color: #dc3545;
+        }
+        .public-toggle-button.private:hover {
+            background-color: #c82333;
+        }
+        #image-previews {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+            margin-bottom: 10px;
+        }
+        .image-preview-item {
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+        }
+        .image-preview-item img,
+        .image-preview-item video {
+            max-width: 100px;
+            max-height: 100px;
+            display: block;
+        }
+        .image-preview-item .remove-image {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background-color: rgba(255, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.8em;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1;
+        }
+        .image-preview-item .remove-image:hover {
+            background-color: rgba(255, 0, 0, 1);
+        }
+        .note-image {
+            max-width: 100%;
+            height: auto;
+            margin-top: 10px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        .new-indicator {
+            background-color: #007bff;
+            color: white;
+            font-size: 0.7em;
+            padding: 2px 6px;
+            border-radius: 3px;
+            margin-left: 5px;
+            vertical-align: middle;
+            font-weight: bold;
+        }
+        #account-management {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: 250px;
+            z-index: 1000;
+        }
+        #account-management h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #0056b3;
+            font-size: 1.1em;
+        }
+        #account-management input {
+            width: calc(100% - 20px);
+            font-size: 0.9em;
+        }
+        #account-management button {
+            width: 100%;
+            margin-right: 0;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+        #loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .loader {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 15px;
+            height: 15px;
+            background-color: #2196F3;
+            border-radius: 50%;
+            animation: bounce 0.8s infinite alternate;
+        }
+        .dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+        @keyframes bounce {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(-20px);
+            }
+        }
+        .google-signin-button {
+            background-color: #db4437;
+        }
+        .google-signin-button:hover {
+            background-color: #c23321;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-overlay" class="hidden">
+        <div class="loader">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <h1>Welcome to TextShare</h1>
+
+        <div id="account-management" class="hidden">
+            <h3>Account Settings</h3>
+            <label for="new-email">New Email:</label>
+            <input type="email" id="new-email" placeholder="Enter new email">
+            <button id="update-email-button">Update Email</button>
+            <label for="new-password">New Password:</label>
+            <input type="password" id="new-password" placeholder="Enter new password">
+            <button id="update-password-button">Update Password</button>
+
+            <label for="username">Username:</label>
+            <input type="text" id="username" placeholder="Enter username">
+            <button id="update-username-button">Update Username</button>
+            <p style="font-size: 0.8em; color: #666;">Username can be changed every 7 days.</p>
+
+            <label for="nickname">Nickname (Optional):</label>
+            <input type="text" id="nickname" placeholder="Enter nickname">
+            <button id="update-nickname-button">Update Nickname</button>
+
+            <div id="account-management-status"></div>
+            <button id="close-account-management" style="background-color: #6c757d;">Close</button>
+        </div>
+
+
+        <div id="auth-section">
+            <h2>Sign Up / Log In</h2>
+            <input type="email" id="email" placeholder="Email" required>
+            <input type="text" id="signup-username" placeholder="Username (Required)" required>
+            <input type="password" id="password" placeholder="Password" required>
+            <button id="signup-button">Sign Up</button>
+            <button id="login-button">Log In</button>
+            <button id="forgot-password-button" class="forgot-password-button">Forgot Password</button>
+            <button id="google-signin-button" class="google-signin-button">Sign In with Google</button>
+            <button id="logout-button" class="hidden">Log Out</button>
+            <button id="open-account-management" class="hidden">Account Management</button>
+            <div id="auth-status"></div>
+        </div>
+
+        <hr>
+
+        <div id="create-text-section" class="hidden">
+            <h2>Share New Text</h2>
+            <input type="text" id="text-title" placeholder="Title of your text" required>
+            <textarea id="text-content" rows="10" placeholder="Enter your text here..." required></textarea>
+
+            <input type="file" id="image-upload-input" accept="image/*,video/*,.mp4,.mov,.wmv,.avi,.mkv,.flv,.webm,.ogg,.3gp,.m4v,.mpg,.mpeg,.hevc" multiple class="hidden">
+            <button id="add-image-button">Add Images/Videos<span class="new-indicator">NEW</span></button>
+            <div id="image-previews"></div>
+            <button id="share-text-button">Share Text</button>
+            <div id="message"></div>
+        </div>
+
+        <hr>
+
+        <div id="shared-texts-section" class="hidden">
+            <h2>Your Shared Texts</h2>
+            <div id="shared-texts">
+            </div>
+        </div>
+
+        <div id="public-text-view" class="hidden">
+            <h2>Viewing Shared Text</h2>
+            <h3 id="public-text-title"></h3>
+            <span id="public-text-author"></span><br>
+            <span id="public-text-timestamp" class="text-timestamp"></span>
+            <pre id="public-text-content"></pre>
+            <div id="public-text-images"></div>
+            <div id="public-text-actions">
+                <button id="public-download-button">Download</button>
+                <button id="public-raw-button">View Raw</button>
+                <button id="public-copy-link-button">Copy Link</button>
+                <button id="public-share-button">Share Text</button>
+                <button id="report-button">Report</button>
+                <span id="public-copy-status" class="copy-status"></span>
+            </div>
+            <div id="public-view-status"></div>
+            <button id="go-back-button" class="hidden">Go Back to My Texts</button>
+
+            <div class="comments-section">
+                <h3>Comments</h3>
+                <p id="comments-status-message" class="comments-status"></p>
+                <div id="comments-list">
+                </div>
+                <div id="comment-input-area" class="hidden">
+                    <h4>Add a Comment</h4>
+                    <textarea id="new-comment-content" rows="3" placeholder="Enter your comment here..."></textarea>
+                    <button id="post-comment-button">Post Comment</button>
+                    <div id="comment-message" class="copy-status"></div>
+                </div>
+                <div id="comment-login-prompt">
+                    <p>Please log in to leave a comment.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendPasswordResetEmail, updateEmail, updatePassword, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs, doc, deleteDoc, getDoc, Timestamp, orderBy, updateDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAFsLLNDebmJ5qiJB-HP9gqdQmgXI0KcQU",
+            authDomain: "noteshare-c6815.firebaseapp.com",
+            projectId: "noteshare-c6815",
+            storageBucket: "noteshare-c6815.firebaseapp.com",
+            messagingSenderId: "193971626161",
+            appId: "1:193971626161:web:f5361df1fb0d2cc08a4290",
+            measurementId: "G-5YWVLKRVRT"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const SUPABASE_URL = 'https://pjscnnquqnofhyvkzhep.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBqc2NubnF1cW5vZmh5dmt6aGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMyMjQyOTgsImexb20iOjIwNjgwMDc2OTl9.zN4Jt9_B8w_D_Q-Y6oB_p4_C_l3n_E-B8qX9qQ9_B4'; // Updated key
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const emailInput = document.getElementById('email');
+        const signupUsernameInput = document.getElementById('signup-username'); // New
+        const passwordInput = document.getElementById('password');
+        const signupButton = document.getElementById('signup-button');
+        const loginButton = document.getElementById('login-button');
+        const forgotPasswordButton = document.getElementById('forgot-password-button');
+        const googleSignInButton = document.getElementById('google-signin-button');
+        const logoutButton = document.getElementById('logout-button');
+        const authStatusDiv = document.getElementById('auth-status');
+        const createTextSection = document.getElementById('create-text-section');
+        const sharedTextsSection = document.getElementById('shared-texts-section');
+        const textTitleInput = document.getElementById('text-title');
+        const textAreas = document.getElementById('text-content');
+        const shareTextButton = document.getElementById('share-text-button');
+        const messageDiv = document.getElementById('message');
+        const sharedTextsDiv = document.getElementById('shared-texts');
+
+        const publicTextViewSection = document.getElementById('public-text-view');
+        const publicTextTitle = document.getElementById('public-text-title');
+        const publicTextAuthor = document.getElementById('public-text-author'); // New
+        const publicTextTimestamp = document.getElementById('public-text-timestamp');
+        const publicTextContent = document.getElementById('public-text-content');
+        const publicTextImagesDiv = document.getElementById('public-text-images');
+        const publicDownloadButton = document.getElementById('public-download-button');
+        const publicRawButton = document.getElementById('public-raw-button');
+        const publicCopyLinkButton = document.getElementById('public-copy-link-button');
+        const publicShareButton = document.getElementById('public-share-button');
+        const reportButton = document.getElementById('report-button');
+        const publicCopyStatus = document.getElementById('public-copy-status');
+        const publicViewStatus = document.getElementById('public-view-status');
+        const goBackButton = document.getElementById('go-back-button');
+
+        const commentsList = document.getElementById('comments-list');
+        const commentInputArea = document.getElementById('comment-input-area');
+        const newCommentContent = document.getElementById('new-comment-content');
+        const postCommentButton = document.getElementById('post-comment-button');
+        const commentMessage = document.getElementById('comment-message');
+        const commentLoginPrompt = document.getElementById('comment-login-prompt');
+        const commentsStatusMessage = document.getElementById('comments-status-message');
+
+        const imageUploadInput = document.getElementById('image-upload-input');
+        const addImageButton = document.getElementById('add-image-button');
+        const imagePreviewsDiv = document.getElementById('image-previews');
+
+        const accountManagementSection = document.getElementById('account-management');
+        const openAccountManagementButton = document.getElementById('open-account-management');
+        const closeAccountManagementButton = document.getElementById('close-account-management');
+        const newEmailInput = document.getElementById('new-email');
+        const newPasswordInput = document.getElementById('new-password');
+        const updateEmailButton = document.getElementById('update-email-button');
+        const updatePasswordButton = document.getElementById('update-password-button');
+        const usernameInput = document.getElementById('username'); // New
+        const nicknameInput = document.getElementById('nickname'); // New
+        const updateUsernameButton = document.getElementById('update-username-button'); // New
+        const updateNicknameButton = document.getElementById('update-nickname-button'); // New
+        const accountManagementStatusDiv = document.getElementById('account-management-status');
+
+        const loadingOverlay = document.getElementById('loading-overlay');
+
+        let currentUser = null;
+        let currentViewedText = null;
+        let selectedFiles = [];
+        let currentUserData = null; // To store user's username, nickname, etc. from Firestore
+
+        // --- Loading Overlay Functions ---
+        function showLoading() {
+            loadingOverlay.classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            loadingOverlay.classList.add('hidden');
+        }
+
+        // --- User Data Management in Firestore ---
+        async function getUserData(uid) {
+            if (!uid) return null;
+            const docRef = doc(db, "users", uid);
+            const docSnap = await getDoc(docRef);
+            return docSnap.exists() ? docSnap.data() : null;
+        }
+
+        async function updateUserData(uid, data) {
+            if (!uid) return;
+            const docRef = doc(db, "users", uid);
+            await setDoc(docRef, data, { merge: true });
+        }
+
+        function formatUserDisplay(userData) {
+            if (!userData) return "Anonymous";
+            const username = userData.username || userData.email || 'unknown_user';
+            const nickname = userData.nickname;
+            if (nickname) {
+                return `${nickname} (@${username})`;
+            }
+            return `@${username}`;
+        }
+
+        // --- Authentication Functions ---
+
+        signupButton.addEventListener('click', async () => {
+            showLoading();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value;
+            const username = signupUsernameInput.value.trim(); // Get username for signup
+
+            if (!email || !password || !username) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please enter email, username, and password.';
+                hideLoading();
+                return;
+            }
+
+            // Check if username already exists
+            const q = query(collection(db, "users"), where("username", "==", username));
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Username is already taken. Please choose another.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+
+                // Save username to Firestore
+                await updateUserData(user.uid, {
+                    username: username,
+                    email: email,
+                    createdAt: Timestamp.now(),
+                    lastUsernameChange: Timestamp.now(), // Set initial change time
+                });
+
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully signed up and logged in as ${email}`;
+                // Clear signup fields
+                emailInput.value = '';
+                passwordInput.value = '';
+                signupUsernameInput.value = '';
+
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error signing up: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        loginButton.addEventListener('click', async () => {
+            showLoading();
+            const email = emailInput.value;
+            const password = passwordInput.value;
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully logged in as ${userCredential.user.email}`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error logging in: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        googleSignInButton.addEventListener('click', async () => {
+            showLoading();
+            const provider = new GoogleAuthProvider();
+            try {
+                const userCredential = await signInWithPopup(auth, provider);
+                const user = userCredential.user;
+
+                // For Google Sign-in, we need to check if the user already exists in Firestore
+                // and if not, create a basic user entry. We can use a derived username initially.
+                const userData = await getUserData(user.uid);
+                if (!userData) {
+                    let defaultUsername = user.displayName ? user.displayName.replace(/\s+/g, '').toLowerCase() : user.email.split('@')[0];
+                    // Ensure uniqueness for derived username
+                    let usernameCounter = 0;
+                    let uniqueUsername = defaultUsername;
+                    while (true) {
+                        const q = query(collection(db, "users"), where("username", "==", uniqueUsername));
+                        const querySnapshot = await getDocs(q);
+                        if (querySnapshot.empty) {
+                            break;
+                        }
+                        usernameCounter++;
+                        uniqueUsername = `${defaultUsername}${usernameCounter}`;
+                    }
+
+                    await updateUserData(user.uid, {
+                        username: uniqueUsername,
+                        email: user.email,
+                        createdAt: Timestamp.now(),
+                        lastUsernameChange: Timestamp.now(),
+                        nickname: user.displayName || ''
+                    });
+                }
+
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Successfully logged in with Google as ${user.email}`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error signing in with Google: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        forgotPasswordButton.addEventListener('click', async () => {
+            showLoading();
+            const email = emailInput.value;
+            if (!email) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please enter your email to reset password.';
+                hideLoading();
+                return;
+            }
+            try {
+                await sendPasswordResetEmail(auth, email);
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = `Password reset email sent to ${email}. Please check your inbox.`;
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error sending password reset email: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        logoutButton.addEventListener('click', async () => {
+            showLoading();
+            try {
+                await signOut(auth);
+                window.location.hash = '';
+                displayMainUI();
+                authStatusDiv.className = 'success';
+                authStatusDiv.textContent = 'Successfully logged out.';
+                currentUserData = null; // Clear user data on logout
+            } catch (error) {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = `Error logging out: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        // --- Account Management Functions ---
+        openAccountManagementButton.addEventListener('click', async () => {
+            if (currentUser) {
+                showLoading();
+                accountManagementSection.classList.remove('hidden');
+                newEmailInput.value = currentUser.email;
+                newPasswordInput.value = '';
+                accountManagementStatusDiv.textContent = '';
+
+                currentUserData = await getUserData(currentUser.uid);
+                if (currentUserData) {
+                    usernameInput.value = currentUserData.username || '';
+                    nicknameInput.value = currentUserData.nickname || '';
+
+                    // Check username cooldown
+                    const lastChangeTimestamp = currentUserData.lastUsernameChange;
+                    if (lastChangeTimestamp) {
+                        const lastChangeDate = lastChangeTimestamp.toDate();
+                        const sevenDaysLater = new Date(lastChangeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                        const now = new Date();
+                        if (now < sevenDaysLater) {
+                            updateUsernameButton.disabled = true;
+                            const timeLeft = sevenDaysLater.getTime() - now.getTime();
+                            const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+                            accountManagementStatusDiv.className = 'error';
+                            accountManagementStatusDiv.textContent = `Username can be changed again in ${daysLeft} days.`;
+                        } else {
+                            updateUsernameButton.disabled = false;
+                            accountManagementStatusDiv.textContent = '';
+                        }
+                    } else {
+                        updateUsernameButton.disabled = false; // No previous change, allow change
+                    }
+                } else {
+                    usernameInput.value = '';
+                    nicknameInput.value = '';
+                    updateUsernameButton.disabled = false;
+                }
+                hideLoading();
+            } else {
+                authStatusDiv.className = 'error';
+                authStatusDiv.textContent = 'Please log in to manage your account.';
+            }
+        });
+
+        closeAccountManagementButton.addEventListener('click', () => {
+            accountManagementSection.classList.add('hidden');
+        });
+
+        updateEmailButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'You must be logged in to update your email.';
+                hideLoading();
+                return;
+            }
+
+            const newEmail = newEmailInput.value.trim();
+            if (!newEmail) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'Please enter a new email address.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                await updateEmail(currentUser, newEmail);
+                await updateUserData(currentUser.uid, { email: newEmail }); // Update email in Firestore
+                accountManagementStatusDiv.className = 'success';
+                accountManagementStatusDiv.textContent = 'Email updated successfully! You might need to log in again.';
+                // currentUser.email is automatically updated by Firebase Auth if successful
+                authStatusDiv.textContent = `Logged in as: ${currentUser.email}`;
+            } catch (error) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = `Error updating email: ${error.message}. You might need to log in again.`;
+                console.error("Error updating email:", error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        updatePasswordButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'You must be logged in to update your password.';
+                hideLoading();
+                return;
+            }
+
+            const newPassword = newPasswordInput.value.trim();
+            if (!newPassword) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'Please enter a new password.';
+                hideLoading();
+                return;
+            }
+            if (newPassword.length < 6) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'Password should be at least 6 characters.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                await updatePassword(currentUser, newPassword);
+                accountManagementStatusDiv.className = 'success';
+                accountManagementStatusDiv.textContent = 'Password updated successfully! You might need to log in again with your new password.';
+                newPasswordInput.value = '';
+            } catch (error) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = `Error updating password: ${error.message}. You might need to log in again.`;
+                console.error("Error updating password:", error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        updateUsernameButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'You must be logged in to update your username.';
+                hideLoading();
+                return;
+            }
+
+            const newUsername = usernameInput.value.trim();
+            if (!newUsername) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'Please enter a username.';
+                hideLoading();
+                return;
+            }
+
+            // Check cooldown period
+            if (currentUserData && currentUserData.lastUsernameChange) {
+                const lastChangeDate = currentUserData.lastUsernameChange.toDate();
+                const sevenDaysLater = new Date(lastChangeDate.getTime() + 7 * 24 * 60 * 60 * 1000);
+                const now = new Date();
+                if (now < sevenDaysLater) {
+                    const timeLeft = sevenDaysLater.getTime() - now.getTime();
+                    const daysLeft = Math.ceil(timeLeft / (1000 * 60 * 60 * 24));
+                    accountManagementStatusDiv.className = 'error';
+                    accountManagementStatusDiv.textContent = `Username can only be changed once every 7 days. Please wait ${daysLeft} more days.`;
+                    hideLoading();
+                    return;
+                }
+            }
+
+            // Check if username is already taken by another user
+            const q = query(collection(db, "users"), where("username", "==", newUsername));
+            const querySnapshot = await getDocs(q);
+            const existingUserDoc = querySnapshot.docs.find(doc => doc.id !== currentUser.uid); // Exclude current user's document
+            if (existingUserDoc) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'This username is already taken. Please choose another.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                await updateUserData(currentUser.uid, {
+                    username: newUsername,
+                    lastUsernameChange: Timestamp.now()
+                });
+                currentUserData.username = newUsername; // Update local cache
+                currentUserData.lastUsernameChange = Timestamp.now(); // Update local cache
+                accountManagementStatusDiv.className = 'success';
+                accountManagementStatusDiv.textContent = 'Username updated successfully!';
+                updateUsernameButton.disabled = true; // Disable until cooldown passes
+                openAccountManagementButton.click(); // Re-open to update cooldown message
+            } catch (error) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = `Error updating username: ${error.message}`;
+                console.error("Error updating username:", error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+        updateNicknameButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = 'You must be logged in to update your nickname.';
+                hideLoading();
+                return;
+            }
+
+            const newNickname = nicknameInput.value.trim(); // Can be empty if user wants to remove it
+
+            try {
+                await updateUserData(currentUser.uid, {
+                    nickname: newNickname
+                });
+                currentUserData.nickname = newNickname; // Update local cache
+                accountManagementStatusDiv.className = 'success';
+                accountManagementStatusDiv.textContent = 'Nickname updated successfully!';
+            } catch (error) {
+                accountManagementStatusDiv.className = 'error';
+                accountManagementStatusDiv.textContent = `Error updating nickname: ${error.message}`;
+                console.error("Error updating nickname:", error);
+            } finally {
+                hideLoading();
+            }
+        });
+
+
+        // Function to control UI visibility
+        function displayMainUI(showPublicView = false) {
+            document.getElementById('auth-section').classList.add('hidden');
+            createTextSection.classList.add('hidden');
+            sharedTextsSection.classList.add('hidden');
+            publicTextViewSection.classList.add('hidden');
+            goBackButton.classList.add('hidden');
+            accountManagementSection.classList.add('hidden');
+            openAccountManagementButton.classList.add('hidden');
+            signupUsernameInput.classList.remove('hidden'); // Show username input by default
+
+            if (showPublicView) {
+                publicTextViewSection.classList.remove('hidden');
+            } else if (currentUser) {
+                createTextSection.classList.remove('hidden');
+                sharedTextsSection.classList.remove('hidden');
+                document.getElementById('auth-section').classList.remove('hidden');
+                logoutButton.classList.remove('hidden');
+                signupButton.classList.add('hidden');
+                loginButton.classList.add('hidden');
+                forgotPasswordButton.classList.add('hidden');
+                googleSignInButton.classList.add('hidden');
+                openAccountManagementButton.classList.remove('hidden');
+                signupUsernameInput.classList.add('hidden'); // Hide username input when logged in
+            } else {
+                document.getElementById('auth-section').classList.remove('hidden');
+                logoutButton.classList.add('hidden');
+                signupButton.classList.remove('hidden');
+                loginButton.classList.remove('hidden');
+                forgotPasswordButton.classList.remove('hidden');
+                googleSignInButton.classList.remove('hidden');
+            }
+            authStatusDiv.textContent = currentUser ? `Logged in as: ${currentUser.email}` : 'Please sign up or log in.';
+            authStatusDiv.className = currentUser ? 'success' : '';
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            showLoading();
+            try {
+                if (currentUser) {
+                    currentUserData = await getUserData(currentUser.uid); // Fetch user data on auth change
+                } else {
+                    currentUserData = null;
+                }
+
+                const hash = window.location.hash;
+                if (hash && hash.startsWith('#text-')) {
+                    const textId = hash.substring(6);
+                    await showPublicText(textId);
+                } else {
+                    displayMainUI(false);
+                    if (currentUser) {
+                        await loadSharedTexts(currentUser.uid);
+                    } else {
+                        sharedTextsDiv.innerHTML = '';
+                    }
+                }
+            } finally {
+                hideLoading();
+            }
+        });
+
+        addImageButton.addEventListener('click', () => {
+            imageUploadInput.click();
+        });
+
+        imageUploadInput.addEventListener('change', (event) => {
+            const files = Array.from(event.target.files);
+            selectedFiles = selectedFiles.concat(files);
+            renderImagePreviews();
+        });
+
+        function renderImagePreviews() {
+            imagePreviewsDiv.innerHTML = '';
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'image-preview-item';
+
+                    if (file.type.startsWith('image/')) {
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        previewItem.appendChild(img);
+                    } else if (file.type.startsWith('video/')) {
+                        const video = document.createElement('video');
+                        video.src = e.target.result;
+                        video.controls = true;
+                        video.style.maxWidth = '100px';
+                        video.style.maxHeight = '100px';
+                        previewItem.appendChild(video);
+                    } else {
+                        const text = document.createElement('span');
+                        text.textContent = file.name;
+                        previewItem.appendChild(text);
+                    }
+
+
+                    const removeButton = document.createElement('button');
+                    removeButton.className = 'remove-image';
+                    removeButton.textContent = 'x';
+                    removeButton.onclick = () => {
+                        selectedFiles.splice(index, 1);
+                        renderImagePreviews();
+                    };
+                    previewItem.appendChild(removeButton);
+                    imagePreviewsDiv.appendChild(previewItem);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function uploadImagesToSupabase(files) {
+            const imageUrls = [];
+            for (const file of files) {
+                const fileName = `${currentUser.uid}/${Date.now()}-${file.name}`;
+                try {
+                    const { data, error } = await supabase.storage
+                        .from('noteshare-images')
+                        .upload(fileName, file, {
+                            cacheControl: '3600',
+                            upsert: false
+                        });
+
+                    if (error) {
+                        throw error;
+                    }
+
+                    const { data: publicUrlData } = supabase.storage
+                        .from('noteshare-images')
+                        .getPublicUrl(fileName);
+
+                    if (publicUrlData && publicUrlData.publicUrl) {
+                        imageUrls.push(publicUrlData.publicUrl);
+                    } else {
+                        throw new Error('Could not get public URL for uploaded file.');
+                    }
+
+                } catch (error) {
+                    console.error('Error uploading file to Supabase:', error.message);
+                    messageDiv.className = 'error';
+                    messageDiv.textContent = `Error uploading image ${file.name}: ${error.message}`;
+                    return null;
+                }
+            }
+            return imageUrls;
+        }
+
+        shareTextButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Please log in to share text.';
+                hideLoading();
+                return;
+            }
+
+            const title = textTitleInput.value.trim();
+            const content = textAreas.value.trim();
+
+            if (!title || !content) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'Please enter both title and content.';
+                hideLoading();
+                return;
+            }
+
+            messageDiv.className = '';
+            messageDiv.textContent = 'Sharing text and uploading files...';
+
+            let imageUrls = [];
+            if (selectedFiles.length > 0) {
+                const uploadedUrls = await uploadImagesToSupabase(selectedFiles);
+                if (uploadedUrls) {
+                    imageUrls = uploadedUrls;
+                } else {
+                    messageDiv.textContent = 'Failed to upload one or more files. Text not shared.';
+                    hideLoading();
+                    return;
+                }
+            }
+
+            try {
+                await addDoc(collection(db, "texts"), {
+                    userId: currentUser.uid,
+                    authorUsername: currentUserData.username, // Store current username
+                    authorNickname: currentUserData.nickname || '', // Store current nickname
+                    title: title,
+                    content: content,
+                    timestamp: Timestamp.now(),
+                    commentsDisabled: false,
+                    commentsLocked: false,
+                    isPublic: false,
+                    images: imageUrls
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = 'Text shared successfully!';
+                textTitleInput.value = '';
+                textAreas.value = '';
+                selectedFiles = [];
+                imagePreviewsDiv.innerHTML = '';
+                await loadSharedTexts(currentUser.uid);
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error sharing text: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        async function loadSharedTexts(userId) {
+            showLoading();
+            sharedTextsDiv.innerHTML = 'Loading your texts...';
+            try {
+                const q = query(collection(db, "texts"), where("userId", "==", userId));
+                const querySnapshot = await getDocs(q);
+                sharedTextsDiv.innerHTML = '';
+
+                if (querySnapshot.empty) {
+                    sharedTextsDiv.innerHTML = '<p>You haven\'t shared any texts yet.</p>';
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    const textData = docSnap.data();
+                    const textId = docSnap.id;
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
+                    const commentsDisabled = textData.commentsDisabled || false;
+                    const commentsLocked = textData.commentsLocked || false;
+                    const isPublic = textData.isPublic || false;
+                    const images = textData.images || [];
+
+                    const disableButtonText = commentsDisabled ? 'Enable Comments' : 'Disable Comments';
+                    const disableButtonClass = commentsDisabled ? 'toggle-button active' : 'toggle-button';
+
+                    const lockButtonText = commentsLocked ? 'Unlock Comments' : 'Lock Comments';
+                    const lockButtonClass = commentsLocked ? 'toggle-button active' : 'toggle-button';
+
+                    const publicButtonText = isPublic ? 'Make Private' : 'Make Public';
+                    const publicButtonClass = isPublic ? 'public-toggle-button private' : 'public-toggle-button';
+
+                    let imageHtml = '';
+                    images.forEach(imageUrl => {
+                        const fileExtension = imageUrl.split('.').pop().toLowerCase().split('?')[0];
+                        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                            imageHtml += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
+                        } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp', 'hevc'].includes(fileExtension)) {
+                            imageHtml += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
+                        }
+                    });
+
+                    const textItem = document.createElement('div');
+                    textItem.className = 'text-item';
+                    textItem.id = `text-${textId}`;
+
+                    textItem.innerHTML = `
+                        <h3><a href="#text-${textId}">${textData.title}</a></h3>
+                        <span class="text-timestamp">${formattedDate} • ${timeAgo}</span>
+                        <pre>${textData.content}</pre>
+                        ${imageHtml}
+                        <div class="actions">
+                            <button onclick="downloadText('${textData.title}', '${encodeURIComponent(textData.content)}')">Download</button>
+                            <button onclick="viewRawText('${encodeURIComponent(textData.content)}')">View Raw</button>
+                            <button onclick="copyShareLink('${textId}', this)">Copy Link</button>
+                            <button onclick="shareTextNative('${textId}', '${textData.title}')">Share Text</button>
+                            <span class="copy-status" id="copy-status-${textId}"></span>
+                            <button onclick="deleteText('${textId}')">Delete</button>
+                            <button class="${disableButtonClass}" onclick="window.toggleCommentsDisabled('${textId}', ${commentsDisabled})">${disableButtonText}</button>
+                            <button class="${lockButtonClass}" onclick="window.toggleCommentsLocked('${textId}', ${commentsLocked})">${lockButtonText}</button>
+                            <button class="${publicButtonClass}" onclick="window.togglePublicStatus('${textId}', ${isPublic})">${publicButtonText}<span class="new-indicator">NEW</span></button>
+                        </div>
+                    `;
+                    sharedTextsDiv.appendChild(textItem);
+                });
+            } catch (error) {
+                sharedTextsDiv.innerHTML = `<p class="error">Error loading texts: ${error.message}</p>`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        window.showPublicText = async (textId) => {
+            showLoading();
+            displayMainUI(true);
+            goBackButton.classList.remove('hidden');
+            publicTextTitle.textContent = 'Loading...';
+            publicTextAuthor.textContent = ''; // Clear author
+            publicTextTimestamp.textContent = '';
+            publicTextContent.textContent = 'Loading text content...';
+            publicTextImagesDiv.innerHTML = '';
+            publicViewStatus.textContent = '';
+            publicCopyStatus.textContent = '';
+            currentViewedText = null;
+            commentsList.innerHTML = 'Loading comments...';
+            commentMessage.textContent = '';
+            commentsStatusMessage.textContent = '';
+
+            try {
+                const docRef = doc(db, "texts", textId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const textData = docSnap.data();
+                    const isPublic = textData.isPublic || false;
+                    const isOwner = currentUser && textData.userId === currentUser.uid;
+
+                    if (!isPublic && !isOwner) {
+                        publicTextTitle.textContent = 'Access Denied';
+                        publicTextAuthor.textContent = '';
+                        publicTextTimestamp.textContent = '';
+                        publicTextContent.textContent = 'This text is private and can only be viewed by its owner.';
+                        publicTextImagesDiv.innerHTML = '';
+                        publicViewStatus.className = 'error';
+                        publicViewStatus.textContent = 'Text is private.';
+                        publicDownloadButton.onclick = null;
+                        publicRawButton.onclick = null;
+                        publicCopyLinkButton.onclick = null;
+                        publicShareButton.onclick = null;
+                        reportButton.onclick = null;
+                        commentsList.innerHTML = '<p>Access denied to comments.</p>';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsStatusMessage.textContent = '';
+                        return;
+                    }
+
+                    const date = textData.timestamp ? textData.timestamp.toDate() : new Date();
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+                    const timeAgo = formatTimeAgo(date);
+
+                    // Fetch author's data
+                    const authorData = await getUserData(textData.userId);
+                    publicTextAuthor.textContent = `By ${formatUserDisplay(authorData)}`;
+
+                    publicTextTitle.textContent = textData.title;
+                    publicTextTimestamp.textContent = `${formattedDate} • ${timeAgo}`;
+                    publicTextContent.textContent = textData.content;
+                    currentViewedText = {
+                        title: textData.title,
+                        content: textData.content,
+                        id: textId,
+                        commentsDisabled: textData.commentsDisabled || false,
+                        commentsLocked: textData.commentsLocked || false,
+                        isPublic: isPublic,
+                        images: textData.images || []
+                    };
+
+                    publicTextImagesDiv.innerHTML = '';
+                    if (currentViewedText.images && currentViewedText.images.length > 0) {
+                        currentViewedText.images.forEach(imageUrl => {
+                            const fileExtension = imageUrl.split('.').pop().toLowerCase().split('?')[0];
+                            if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                                publicTextImagesDiv.innerHTML += `<img src="${imageUrl}" alt="Note Image" class="note-image">`;
+                            } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp', 'hevc'].includes(fileExtension)) {
+                                publicTextImagesDiv.innerHTML += `<video controls class="note-image"><source src="${imageUrl}" type="video/${fileExtension}">Your browser does not support the video tag.</video>`;
+                            }
+                        });
+                    }
+
+                    publicViewStatus.className = 'success';
+                    publicViewStatus.textContent = 'Text loaded successfully.';
+
+                    publicDownloadButton.onclick = () => downloadText(currentViewedText.title, encodeURIComponent(currentViewedText.content));
+                    publicRawButton.onclick = () => viewRawText(encodeURIComponent(currentViewedText.content));
+                    publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
+                    publicShareButton.onclick = () => shareTextNative(currentViewedText.id, currentViewedText.title);
+                    reportButton.onclick = () => {
+                        const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+                        const reportUrl = `https://githubuser102234.github.io/NoteShare/report?link=${encodeURIComponent(currentNoteLink)}`;
+                        window.location.href = reportUrl;
+                    };
+
+                    if (currentViewedText.commentsDisabled) {
+                        commentsStatusMessage.textContent = 'Comments are disabled for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                        commentsList.innerHTML = '<p>Comments are disabled.</p>';
+                    } else if (currentViewedText.commentsLocked) {
+                        commentsStatusMessage.textContent = 'Comments are locked for this text by the owner.';
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    } else if (currentUser) {
+                        commentInputArea.classList.remove('hidden');
+                        commentLoginPrompt.classList.add('hidden');
+                    } else {
+                        commentInputArea.classList.add('hidden');
+                        commentLoginPrompt.classList.remove('hidden');
+                    }
+
+                    if (!currentViewedText.commentsDisabled) {
+                        await loadComments(textId);
+                    }
+
+
+                } else {
+                    publicTextTitle.textContent = 'Text Not Found';
+                    publicTextAuthor.textContent = '';
+                    publicTextTimestamp.textContent = '';
+                    publicTextContent.textContent = 'The shared text with this ID does not exist or has been deleted.';
+                    publicTextImagesDiv.innerHTML = '';
+                    publicViewStatus.className = 'error';
+                    publicViewStatus.textContent = 'Text not found.';
+                    publicDownloadButton.onclick = null;
+                    publicRawButton.onclick = null;
+                    publicCopyLinkButton.onclick = null;
+                    publicShareButton.onclick = null;
+                    reportButton.onclick = null;
+                    commentsList.innerHTML = '<p>No comments available for this text.</p>';
+                    commentInputArea.classList.add('hidden');
+                    commentLoginPrompt.classList.add('hidden');
+                    commentsStatusMessage.textContent = '';
+                }
+            } catch (error) {
+                publicTextTitle.textContent = 'Error';
+                publicTextAuthor.textContent = '';
+                publicTextTimestamp.textContent = '';
+                publicTextContent.textContent = 'Could not load text due to an error.';
+                publicTextImagesDiv.innerHTML = '';
+                publicViewStatus.className = 'error';
+                publicViewStatus.textContent = `Error loading text: ${error.message}`;
+                publicDownloadButton.onclick = null;
+                publicRawButton.onclick = null;
+                publicCopyLinkButton.onclick = null;
+                publicShareButton.onclick = null;
+                reportButton.onclick = null;
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+                commentInputArea.classList.add('hidden');
+                commentLoginPrompt.classList.add('hidden');
+                commentsStatusMessage.textContent = '';
+            } finally {
+                hideLoading();
+            }
+        };
+
+        async function loadComments(textId) {
+            commentsList.innerHTML = '';
+            try {
+                const q = query(collection(db, "comments"), where("textId", "==", textId), orderBy("timestamp", "asc"));
+                const querySnapshot = await getDocs(q);
+
+                if (querySnapshot.empty) {
+                    commentsList.innerHTML = '<p>No comments yet. Be the first to comment!</p>';
+                    return;
+                }
+
+                for (const docSnap of querySnapshot.docs) {
+                    const commentData = docSnap.data();
+                    const date = commentData.timestamp ? commentData.timestamp.toDate() : new Date();
+                    const formattedDate = date.toLocaleString();
+
+                    // Fetch user data for the comment author
+                    const commentAuthorData = await getUserData(commentData.userId);
+                    const authorDisplay = formatUserDisplay(commentAuthorData);
+
+                    const commentItem = document.createElement('div');
+                    commentItem.className = 'comment-item';
+                    commentItem.innerHTML = `
+                        <span class="comment-author">${authorDisplay}</span>
+                        <p>${commentData.content}</p>
+                        <span class="comment-timestamp">${formattedDate}</span>
+                    `;
+                    commentsList.appendChild(commentItem);
+                }
+            } catch (error) {
+                commentsList.innerHTML = `<p class="error">Error loading comments: ${error.message}</p>`;
+            }
+        }
+
+        postCommentButton.addEventListener('click', async () => {
+            showLoading();
+            if (!currentUser || !currentViewedText) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'You must be logged in and viewing a text to post a comment.';
+                hideLoading();
+                return;
+            }
+
+            if (currentViewedText.commentsDisabled) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently disabled for this text.';
+                hideLoading();
+                return;
+            }
+            if (currentViewedText.commentsLocked) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Comments are currently locked for this text.';
+                hideLoading();
+                return;
+            }
+
+            const commentContent = newCommentContent.value.trim();
+
+            if (!commentContent) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = 'Please enter your comment.';
+                hideLoading();
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "comments"), {
+                    textId: currentViewedText.id,
+                    userId: currentUser.uid,
+                    // userEmail: currentUser.email, // No longer strictly needed as we fetch user data for display
+                    content: commentContent,
+                    timestamp: Timestamp.now()
+                });
+                commentMessage.className = 'success';
+                commentMessage.textContent = 'Comment posted successfully!';
+                newCommentContent.value = '';
+                await loadComments(currentViewedText.id);
+            } catch (error) {
+                commentMessage.className = 'error';
+                commentMessage.textContent = `Error posting comment: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        });
+
+        window.toggleCommentsDisabled = async (textId, currentStatus) => {
+            showLoading();
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                hideLoading();
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsDisabled: !currentStatus,
+                    commentsLocked: false
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'disabled' : 'enabled'} successfully!`;
+                await loadSharedTexts(currentUser.uid);
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comments: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        };
+
+        window.toggleCommentsLocked = async (textId, currentStatus) => {
+            showLoading();
+            if (!currentUser) {
+                alert('You must be logged in to manage comment settings.');
+                hideLoading();
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    commentsLocked: !currentStatus
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Comments ${!currentStatus ? 'locked' : 'unlocked'} successfully!`;
+                await loadSharedTexts(currentUser.uid);
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling comment lock: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        };
+
+        window.togglePublicStatus = async (textId, currentStatus) => {
+            showLoading();
+            if (!currentUser) {
+                alert('You must be logged in to change the public status of your texts.');
+                hideLoading();
+                return;
+            }
+            try {
+                const textRef = doc(db, "texts", textId);
+                await updateDoc(textRef, {
+                    isPublic: !currentStatus
+                });
+                messageDiv.className = 'success';
+                messageDiv.textContent = `Text is now ${!currentStatus ? 'public' : 'private'}!`;
+                await loadSharedTexts(currentUser.uid);
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error toggling public status: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        };
+
+        window.downloadText = (title, content) => {
+            const element = document.createElement('a');
+            element.setAttribute('href', 'data:text/plain;charset=utf-8,' + decodeURIComponent(content));
+            element.setAttribute('download', `${title}.txt`);
+            element.style.display = 'none';
+            document.body.appendChild(element);
+            element.click();
+            document.body.removeChild(element);
+        };
+
+        window.viewRawText = (content) => {
+            const rawTextWindow = window.open('', '_blank');
+            rawTextWindow.document.write(`<pre>${decodeURIComponent(content)}</pre>`);
+            rawTextWindow.document.close();
+        };
+
+        window.copyShareLink = async (textId, buttonElement) => {
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            let statusElement;
+
+            if (buttonElement.id === 'public-copy-link-button') {
+                statusElement = publicCopyStatus;
+            } else {
+                statusElement = document.getElementById(`copy-status-${textId}`);
+            }
+
+            try {
+                await navigator.clipboard.writeText(shareLink);
+                statusElement.className = 'copy-status success';
+                statusElement.textContent = 'Copied!';
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
+            } catch (err) {
+                statusElement.className = 'copy-status error';
+                statusElement.textContent = 'Failed to copy!';
+                console.error('Failed to copy: ', err);
+                setTimeout(() => { statusElement.textContent = ''; statusElement.className = 'copy-status'; }, 2000);
+            }
+        };
+
+        window.shareTextNative = async (textId, title) => {
+            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: `TextShare: ${title}`,
+                        url: shareLink,
+                    });
+                    console.log('Text shared successfully');
+                } catch (error) {
+                    console.error('Error sharing text:', error);
+                }
+            } else {
+                alert('Your browser does not support the Web Share API. You can copy the link instead.');
+            }
+        };
+
+        window.deleteText = async (textId) => {
+            showLoading();
+            if (!currentUser) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = 'You must be logged in to delete texts.';
+                hideLoading();
+                return;
+            }
+            if (!confirm('Are you sure you want to delete this text? This will also delete all associated images/videos and comments.')) {
+                hideLoading();
+                return;
+            }
+            try {
+                const textDoc = await getDoc(doc(db, "texts", textId));
+                if (textDoc.exists()) {
+                    const textData = textDoc.data();
+                    const imagesToDelete = textData.images || [];
+
+                    for (const imageUrl of imagesToDelete) {
+                        try {
+                            const url = new URL(imageUrl);
+                            const pathSegments = url.pathname.split('/');
+                            const bucketIndex = pathSegments.indexOf('noteshare-images');
+                            if (bucketIndex > -1 && pathSegments.length > bucketIndex + 1) {
+                                const filePath = pathSegments.slice(bucketIndex + 1).join('/');
+                                const { error: deleteError } = await supabase.storage
+                                    .from('noteshare-images')
+                                    .remove([filePath]);
+                                if (deleteError) {
+                                    console.warn(`Could not delete image ${filePath} from Supabase:`, deleteError.message);
+                                }
+                            }
+                        } catch (e) {
+                            console.warn(`Error processing image URL for deletion: ${imageUrl}`, e);
+                        }
+                    }
+                }
+
+                await deleteDoc(doc(db, "texts", textId));
+
+                const q = query(collection(db, "comments"), where("textId", "==", textId));
+                const querySnapshot = await getDocs(q);
+                const deletePromises = [];
+                querySnapshot.forEach((commentDoc) => {
+                    deletePromises.push(deleteDoc(doc(db, "comments", commentDoc.id)));
+                });
+                await Promise.all(deletePromises);
+
+
+                messageDiv.className = 'success';
+                messageDiv.textContent = 'Text, associated images/videos, and comments deleted successfully!';
+                await loadSharedTexts(currentUser.uid);
+            } catch (error) {
+                messageDiv.className = 'error';
+                messageDiv.textContent = `Error deleting text: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        };
+
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) {
+                return Math.floor(interval) + " years ago";
+            }
+            interval = seconds / 2592000;
+            if (interval > 1) {
+                return Math.floor(interval) + " months ago";
+            }
+            interval = seconds / 86400;
+            if (interval > 1) {
+                return Math.floor(interval) + " days ago";
+            }
+            interval = seconds / 3600;
+            if (interval > 1) {
+                return Math.floor(interval) + " hours ago";
+            }
+            interval = seconds / 60;
+            if (interval > 1) {
+                return Math.floor(interval) + " minutes ago";
+            }
+            return Math.floor(seconds) + " seconds ago";
+        }
+
+        window.addEventListener('hashchange', async () => {
+            showLoading();
+            try {
+                const hash = window.location.hash;
+                if (hash && hash.startsWith('#text-')) {
+                    const textId = hash.substring(6);
+                    await showPublicText(textId);
+                } else {
+                    displayMainUI(false);
+                    if (currentUser) {
+                        await loadSharedTexts(currentUser.uid);
+                    }
+                }
+            } finally {
+                hideLoading();
+            }
+        });
+
+        goBackButton.addEventListener('click', () => {
+            window.location.hash = '';
+        });
+    </script>
+</body>
+</html>
