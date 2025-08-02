@@ -930,7 +930,7 @@
                 reader.readAsDataURL(file);
             });
         }
-
+        
         async function uploadFilesToSupabase(files, folderName) {
             const fileUrls = [];
             for (const file of files) {
@@ -942,9 +942,18 @@
                             cacheControl: '3600',
                             upsert: false
                         });
+                    // The above line is causing an issue. The upload method does not accept
+                    // these options directly. The correct way is to pass options in an object.
+                    // Let's fix it by removing the unsupported options.
+                    // The correct call is: .upload(fileName, file)
+                    // Or with valid options like: .upload(fileName, file, { contentType: file.type })
+                    
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('noteshare-images')
+                        .upload(fileName, file);
 
-                    if (error) {
-                        throw error;
+                    if (uploadError) {
+                        throw uploadError;
                     }
 
                     const { data: publicUrlData } = supabase.storage
