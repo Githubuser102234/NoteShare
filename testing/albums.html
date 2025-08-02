@@ -934,40 +934,36 @@
         async function uploadFilesToSupabase(files, folderName) {
             const fileUrls = [];
             for (const file of files) {
+                // To ensure files don't have the same name, we use a timestamp-based naming convention.
+                // If you want to allow overwriting, you'll need to pass `upsert: true` to the upload call
+                // For this scenario, where the user might upload new images with the same name,
+                // we should either use unique names or upsert. Let's stick with unique names.
                 const fileName = `${folderName}/${Date.now()}-${file.name}`;
                 try {
-                    const { data, error } = await supabase.storage
+                    const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('noteshare-images')
                         .upload(fileName, file, {
                             cacheControl: '3600',
-                            upsert: false
+                            upsert: true  // The key change here: This allows overwriting if a file with the same name exists.
                         });
-                    // The above line is causing an issue. The upload method does not accept
-                    // these options directly. The correct way is to pass options in an object.
-                    // Let's fix it by removing the unsupported options.
-                    // The correct call is: .upload(fileName, file)
-                    // Or with valid options like: .upload(fileName, file, { contentType: file.type })
-                    
-                    const { data: uploadData, error: uploadError } = await supabase.storage
-                        .from('noteshare-images')
-                        .upload(fileName, file);
 
                     if (uploadError) {
-                        throw uploadError;
+                        // This error block will catch the "resource already exists" error and other upload errors.
+                        console.error('Error uploading file to Supabase:', uploadError.message);
+                        return null; // Return null to indicate failure
                     }
 
                     const { data: publicUrlData } = supabase.storage
                         .from('noteshare-images')
-                        .getPublicUrl(fileName);
+                        .getPublicUrl(uploadData.path);
 
                     if (publicUrlData && publicUrlData.publicUrl) {
                         fileUrls.push(publicUrlData.publicUrl);
                     } else {
                         throw new Error('Could not get public URL for uploaded file.');
                     }
-
                 } catch (error) {
-                    console.error('Error uploading file to Supabase:', error.message);
+                    console.error('An unexpected error occurred during file upload:', error.message);
                     return null;
                 }
             }
