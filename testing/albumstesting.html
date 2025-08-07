@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
- <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="TextShare">
-<link rel="apple-touch-icon" href="icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="TextShare">
+    <link rel="apple-touch-icon" href="icon.png">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TextShare</title>
@@ -59,16 +59,16 @@
         .forgot-password-button:hover {
             background-color: #5a6268;
         }
-        #auth-status, #message, #public-view-status, #account-management-status, #album-status {
+        #auth-status, #message, #public-view-status, #account-management-status, #album-status, #public-album-status {
             margin-top: 10px;
             padding: 10px;
             border-radius: 4px;
         }
-        #auth-status.success, #public-view-status.success, .copy-status.success, #account-management-status.success, #album-status.success {
+        #auth-status.success, #public-view-status.success, #public-album-status.success, .copy-status.success, #account-management-status.success, #album-status.success {
             background-color: #d4edda;
             color: #155724;
         }
-        #auth-status.error, #public-view-status.error, .copy-status.error, #account-management-status.error, #album-status.error {
+        #auth-status.error, #public-view-status.error, #public-album-status.error, .copy-status.error, #account-management-status.error, #album-status.error {
             background-color: #f8d7da;
             color: #721c24;
         }
@@ -109,12 +109,12 @@
         .hidden {
             display: none !important;
         }
-        #public-text-view {
+        #public-text-view, #public-album-view {
             margin-top: 30px;
             border-top: 1px solid #eee;
             padding-top: 20px;
         }
-        #public-text-view h2 {
+        #public-text-view h2, #public-album-view h2 {
             margin-bottom: 15px;
         }
         #public-text-content {
@@ -457,6 +457,27 @@
         .fancy-viewer .nav-button:hover {
             background-color: rgba(0, 0, 0, 0.8);
         }
+
+        #public-album-media-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .public-album-media-item {
+            cursor: pointer;
+            overflow: hidden;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            position: relative;
+        }
+        .public-album-media-item img, .public-album-media-item video {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -568,6 +589,19 @@
                 </div>
             </div>
         </div>
+
+        <div id="public-album-view" class="hidden">
+            <h2>Viewing Shared Album</h2>
+            <h3 id="public-album-title"></h3>
+            <span id="public-album-timestamp" class="text-timestamp"></span>
+            <div id="public-album-media-grid"></div>
+            <div id="public-album-actions">
+                 <button id="public-album-copy-link-button">Copy Link</button>
+                 <span id="public-album-copy-status" class="copy-status"></span>
+                 <button id="go-back-from-album-button" class="hidden">Go Back to My Albums</button>
+            </div>
+            <div id="public-album-status"></div>
+        </div>
     </div>
 
     <script type="module">
@@ -659,6 +693,16 @@
         const albumStatusDiv = document.getElementById('album-status');
         const sharedAlbumsSection = document.getElementById('shared-albums-section');
         const sharedAlbumsDiv = document.getElementById('shared-albums');
+
+        // New Public Album View elements
+        const publicAlbumViewSection = document.getElementById('public-album-view');
+        const publicAlbumTitle = document.getElementById('public-album-title');
+        const publicAlbumTimestamp = document.getElementById('public-album-timestamp');
+        const publicAlbumMediaGrid = document.getElementById('public-album-media-grid');
+        const publicAlbumCopyLinkButton = document.getElementById('public-album-copy-link-button');
+        const publicAlbumCopyStatus = document.getElementById('public-album-copy-status');
+        const publicAlbumStatusDiv = document.getElementById('public-album-status');
+        const goBackFromAlbumButton = document.getElementById('go-back-from-album-button');
 
         let currentUser = null;
         let currentViewedText = null;
@@ -843,19 +887,23 @@
         });
 
 
-        function displayMainUI(showPublicView = false) {
+        function displayMainUI(showPublicText = false, showPublicAlbum = false) {
             document.getElementById('auth-section').classList.add('hidden');
             createTextSection.classList.add('hidden');
             sharedTextsSection.classList.add('hidden');
             publicTextViewSection.classList.add('hidden');
+            publicAlbumViewSection.classList.add('hidden');
             goBackButton.classList.add('hidden');
+            goBackFromAlbumButton.classList.add('hidden');
             accountManagementSection.classList.add('hidden');
             openAccountManagementButton.classList.add('hidden');
             createAlbumSection.classList.add('hidden');
             sharedAlbumsSection.classList.add('hidden');
 
-            if (showPublicView) {
+            if (showPublicText) {
                 publicTextViewSection.classList.remove('hidden');
+            } else if (showPublicAlbum) {
+                publicAlbumViewSection.classList.remove('hidden');
             } else if (currentUser) {
                 createTextSection.classList.remove('hidden');
                 sharedTextsSection.classList.remove('hidden');
@@ -880,16 +928,18 @@
             authStatusDiv.className = currentUser ? 'success' : '';
         }
 
-
-        onAuthStateChanged(auth, async (user) => {
-            currentUser = user;
+        async function handleHashChange() {
             showLoading();
             try {
                 const hash = window.location.hash;
                 if (hash && hash.startsWith('#text-')) {
                     const textId = hash.substring(6);
                     await showPublicText(textId);
-                } else {
+                } else if (hash && hash.startsWith('#album-')) {
+                    const albumId = hash.substring(7);
+                    await showPublicAlbum(albumId);
+                }
+                else {
                     displayMainUI(false);
                     if (currentUser) {
                         await loadSharedTexts(currentUser.uid);
@@ -902,8 +952,12 @@
             } finally {
                 hideLoading();
             }
-        });
+        }
 
+        onAuthStateChanged(auth, async (user) => {
+            currentUser = user;
+            await handleHashChange();
+        });
 
         // --- Text Section Image Upload Functions ---
         addTextImageButton.addEventListener('click', () => {
@@ -958,23 +1012,18 @@
         async function uploadFilesToSupabase(files, folderName) {
             const fileUrls = [];
             for (const file of files) {
-                // To ensure files don't have the same name, we use a timestamp-based naming convention.
-                // If you want to allow overwriting, you'll need to pass `upsert: true` to the upload call
-                // For this scenario, where the user might upload new images with the same name,
-                // we should either use unique names or upsert. Let's stick with unique names.
                 const fileName = `${folderName}/${Date.now()}-${file.name}`;
                 try {
                     const { data: uploadData, error: uploadError } = await supabase.storage
                         .from('noteshare-images')
                         .upload(fileName, file, {
                             cacheControl: '3600',
-                            upsert: true  // The key change here: This allows overwriting if a file with the same name exists.
+                            upsert: true
                         });
 
                     if (uploadError) {
-                        // This error block will catch the "resource already exists" error and other upload errors.
                         console.error('Error uploading file to Supabase:', uploadError.message);
-                        return null; // Return null to indicate failure
+                        return null;
                     }
 
                     const { data: publicUrlData } = supabase.storage
@@ -1205,7 +1254,7 @@
         };
 
         window.copyAlbumLink = async (albumId, buttonElement) => {
-            const shareLink = `${window.location.origin}/NoteShare/#album-${albumId}`; // Assuming a new hash format for albums
+            const shareLink = `${window.location.origin}${window.location.pathname}#album-${albumId}`;
             let statusElement = buttonElement.nextElementSibling;
             
             try {
@@ -1284,8 +1333,90 @@
             }
         }
 
-        function showFancyViewer(mediaUrls) {
-            let currentIndex = 0;
+        async function showPublicAlbum(albumId) {
+            showLoading();
+            displayMainUI(false, true);
+            publicAlbumTitle.textContent = 'Loading...';
+            publicAlbumTimestamp.textContent = '';
+            publicAlbumMediaGrid.innerHTML = '';
+            publicAlbumStatusDiv.textContent = '';
+            publicAlbumCopyStatus.textContent = '';
+            goBackFromAlbumButton.classList.add('hidden');
+            
+            try {
+                const docRef = doc(db, "albums", albumId);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const albumData = docSnap.data();
+                    const isOwner = currentUser && albumData.userId === currentUser.uid;
+
+                    if (!albumData.media || albumData.media.length === 0) {
+                        publicAlbumTitle.textContent = 'Album Empty';
+                        publicAlbumStatusDiv.className = 'error';
+                        publicAlbumStatusDiv.textContent = 'This album contains no media.';
+                        return;
+                    }
+
+                    const date = albumData.timestamp ? albumData.timestamp.toDate() : new Date();
+                    const formattedDate = date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+                    publicAlbumTitle.textContent = albumData.title;
+                    publicAlbumTimestamp.textContent = `Created on: ${formattedDate}`;
+
+                    publicAlbumMediaGrid.innerHTML = '';
+                    albumData.media.forEach((mediaUrl, index) => {
+                        const fileExtension = mediaUrl.split('.').pop().toLowerCase().split('?')[0];
+                        const mediaItem = document.createElement('div');
+                        mediaItem.className = 'public-album-media-item';
+
+                        if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+                            const img = document.createElement('img');
+                            img.src = mediaUrl;
+                            img.alt = `Album photo ${index + 1}`;
+                            img.onclick = () => showFancyViewer(albumData.media, index);
+                            mediaItem.appendChild(img);
+                        } else if (['mp4', 'webm', 'ogg', 'mov', 'avi', 'mkv', 'flv', 'wmv', 'm4v', 'mpg', 'mpeg', '3gp', 'hevc'].includes(fileExtension)) {
+                            const video = document.createElement('video');
+                            video.src = mediaUrl;
+                            video.controls = false; // Prevents default controls on the grid item
+                            video.onmouseover = () => video.play(); // Autoplay on hover
+                            video.onmouseout = () => video.pause(); // Pause on hover out
+                            video.onclick = () => showFancyViewer(albumData.media, index);
+                            mediaItem.appendChild(video);
+                        }
+                        publicAlbumMediaGrid.appendChild(mediaItem);
+                    });
+
+                    publicAlbumCopyLinkButton.onclick = () => copyAlbumLink(albumId, publicAlbumCopyLinkButton);
+
+                    if (isOwner) {
+                         goBackFromAlbumButton.classList.remove('hidden');
+                         goBackFromAlbumButton.onclick = () => window.location.hash = '';
+                    }
+
+                    publicAlbumStatusDiv.className = 'success';
+                    publicAlbumStatusDiv.textContent = 'Album loaded successfully.';
+                } else {
+                    publicAlbumTitle.textContent = 'Album Not Found';
+                    publicAlbumTimestamp.textContent = '';
+                    publicAlbumMediaGrid.innerHTML = '';
+                    publicAlbumStatusDiv.className = 'error';
+                    publicAlbumStatusDiv.textContent = 'The shared album with this ID does not exist or has been deleted.';
+                }
+            } catch (error) {
+                publicAlbumTitle.textContent = 'Error';
+                publicAlbumTimestamp.textContent = '';
+                publicAlbumMediaGrid.innerHTML = '';
+                publicAlbumStatusDiv.className = 'error';
+                publicAlbumStatusDiv.textContent = `Error loading album: ${error.message}`;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showFancyViewer(mediaUrls, startIndex = 0) {
+            let currentIndex = startIndex;
 
             const viewerOverlay = document.createElement('div');
             viewerOverlay.className = 'fancy-viewer-overlay';
@@ -1307,12 +1438,12 @@
             const prevButton = document.createElement('button');
             prevButton.className = 'nav-button prev-button';
             prevButton.innerHTML = '&#x2039;';
-            prevButton.onclick = () => navigate(-1);
+            prevButton.onclick = (e) => { e.stopPropagation(); navigate(-1); };
 
             const nextButton = document.createElement('button');
             nextButton.className = 'nav-button next-button';
             nextButton.innerHTML = '&#x203a;';
-            nextButton.onclick = () => navigate(1);
+            nextButton.onclick = (e) => { e.stopPropagation(); navigate(1); };
 
             const displayMedia = (index) => {
                 viewer.innerHTML = '';
@@ -1327,6 +1458,7 @@
                     mediaElement = document.createElement('video');
                     mediaElement.src = url;
                     mediaElement.controls = true;
+                    mediaElement.autoplay = true;
                 } else {
                     mediaElement = document.createElement('p');
                     mediaElement.textContent = `Unsupported file type: ${fileExtension}`;
@@ -1436,7 +1568,7 @@
 
         window.showPublicText = async (textId) => {
             showLoading();
-            displayMainUI(true);
+            displayMainUI(true, false);
             goBackButton.classList.remove('hidden');
             publicTextTitle.textContent = 'Loading...';
             publicTextTimestamp.textContent = '';
@@ -1514,7 +1646,7 @@
                     publicCopyLinkButton.onclick = () => copyShareLink(currentViewedText.id, publicCopyLinkButton);
                     publicShareButton.onclick = () => shareTextNative(currentViewedText.id, currentViewedText.title);
                     reportButton.onclick = () => {
-                        const currentNoteLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+                        const currentNoteLink = `${window.location.origin}${window.location.pathname}#text-${textId}`;
                         const reportUrl = `https://githubuser102234.github.io/NoteShare/report?link=${encodeURIComponent(currentNoteLink)}`;
                         window.location.href = reportUrl;
                     };
@@ -1747,7 +1879,7 @@
         };
 
         window.copyShareLink = async (textId, buttonElement) => {
-            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            const shareLink = `${window.location.origin}${window.location.pathname}#text-${textId}`;
             let statusElement;
 
             if (buttonElement.id === 'public-copy-link-button') {
@@ -1770,7 +1902,7 @@
         };
 
         window.shareTextNative = async (textId, title) => {
-            const shareLink = `${window.location.origin}/NoteShare/#text-${textId}`;
+            const shareLink = `${window.location.origin}${window.location.pathname}#text-${textId}`;
             if (navigator.share) {
                 try {
                     await navigator.share({
@@ -1873,26 +2005,13 @@
         }
 
 
-        window.addEventListener('hashchange', async () => {
-            showLoading();
-            try {
-                const hash = window.location.hash;
-                if (hash && hash.startsWith('#text-')) {
-                    const textId = hash.substring(6);
-                    await showPublicText(textId);
-                } else {
-                    displayMainUI(false);
-                    if (currentUser) {
-                        await loadSharedTexts(currentUser.uid);
-                        await loadSharedAlbums(currentUser.uid);
-                    }
-                }
-            } finally {
-                hideLoading();
-            }
-        });
+        window.addEventListener('hashchange', handleHashChange);
 
         goBackButton.addEventListener('click', () => {
+            window.location.hash = '';
+        });
+
+        goBackFromAlbumButton.addEventListener('click', () => {
             window.location.hash = '';
         });
     </script>
